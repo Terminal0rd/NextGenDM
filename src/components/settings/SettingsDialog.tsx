@@ -1,0 +1,135 @@
+import { useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useSettingsStore } from '@/stores/settingsStore';
+import { FolderSearch, Save, X } from 'lucide-react';
+import { open } from '@tauri-apps/plugin-dialog';
+
+export function SettingsDialog() {
+  const { isOpen, setIsOpen, settings, loadSettings, updateSettings } = useSettingsStore();
+
+  useEffect(() => {
+    if (isOpen && !settings) {
+      loadSettings();
+    }
+  }, [isOpen, settings, loadSettings]);
+
+  if (!settings) return null;
+
+  const handlePickDirectory = async () => {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        defaultPath: settings.default_download_path,
+      });
+      if (selected && typeof selected === 'string') {
+        updateSettings({ default_download_path: selected });
+      }
+    } catch (e) {
+      console.error('Failed to pick directory:', e);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="sm:max-w-[500px] bg-zinc-950 border-zinc-800 text-zinc-200">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold text-zinc-100">Settings</DialogTitle>
+        </DialogHeader>
+
+        <div className="grid gap-6 py-4">
+          {/* Default Download Path */}
+          <div className="grid gap-2">
+            <Label className="text-xs text-zinc-400">Default Download Folder</Label>
+            <div className="flex gap-2">
+              <Input
+                value={settings.default_download_path}
+                readOnly
+                className="bg-zinc-900 border-zinc-800 text-sm font-mono text-zinc-300"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handlePickDirectory}
+                className="shrink-0 border-zinc-800 hover:bg-zinc-800"
+              >
+                <FolderSearch className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Max Concurrent Downloads */}
+          <div className="grid gap-2">
+            <Label className="text-xs text-zinc-400">Max Concurrent Downloads (Queue Limit)</Label>
+            <Input
+              type="number"
+              min={1}
+              max={10}
+              value={settings.max_concurrent_downloads}
+              onChange={(e) => updateSettings({ max_concurrent_downloads: parseInt(e.target.value) || 3 })}
+              className="bg-zinc-900 border-zinc-800"
+            />
+          </div>
+
+          {/* Speed Limit */}
+          <div className="grid gap-2">
+            <Label className="text-xs text-zinc-400">Global Speed Limit (MB/s) — 0 for Unlimited</Label>
+            <Input
+              type="number"
+              min={0}
+              value={settings.speed_limit_bytes_per_sec / 1024 / 1024}
+              onChange={(e) => {
+                const mb = parseFloat(e.target.value) || 0;
+                updateSettings({ speed_limit_bytes_per_sec: Math.floor(mb * 1024 * 1024) });
+              }}
+              className="bg-zinc-900 border-zinc-800"
+            />
+          </div>
+
+          {/* Auto Start */}
+          <div className="flex items-center justify-between mt-2">
+            <div className="grid gap-1.5">
+              <Label className="text-sm font-medium">Auto-start Downloads</Label>
+              <p className="text-xs text-zinc-500">Automatically begin downloading when a new URL is added.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={settings.auto_start_downloads}
+              onClick={() => updateSettings({ auto_start_downloads: !settings.auto_start_downloads })}
+              className={`peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 ${settings.auto_start_downloads ? 'bg-cyan-500' : 'bg-zinc-700'}`}
+            >
+              <span className={`pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform ${settings.auto_start_downloads ? 'translate-x-4' : 'translate-x-0'}`} />
+            </button>
+          </div>
+
+          {/* Show Notifications */}
+          <div className="flex items-center justify-between">
+            <div className="grid gap-1.5">
+              <Label className="text-sm font-medium">Desktop Notifications</Label>
+              <p className="text-xs text-zinc-500">Show a notification when a download completes.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={settings.show_notifications}
+              onClick={() => updateSettings({ show_notifications: !settings.show_notifications })}
+              className={`peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 ${settings.show_notifications ? 'bg-cyan-500' : 'bg-zinc-700'}`}
+            >
+              <span className={`pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform ${settings.show_notifications ? 'translate-x-4' : 'translate-x-0'}`} />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
+          <Button variant="ghost" onClick={() => setIsOpen(false)} className="hover:bg-zinc-800">
+            Close
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
