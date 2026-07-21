@@ -16,6 +16,8 @@ export function useTauriEvents(): void {
   const setError = useDownloadStore((s) => s.setError);
   const fetchDownloads = useDownloadStore((s) => s.fetchDownloads);
   const removeDownloadFromList = useDownloadStore((s) => s.removeDownloadFromList);
+  const setInterceptedUrl = useDownloadStore((s) => s.setInterceptedUrl);
+  const setAddDialogOpen = useDownloadStore((s) => s.setAddDialogOpen);
 
   useEffect(() => {
     const unlisteners: UnlistenFn[] = [];
@@ -55,6 +57,19 @@ export function useTauriEvents(): void {
         }
       );
       unlisteners.push(u3);
+
+      // ── Browser Intercepts ──────────────────────────────────
+      const u4 = await listen<any>(
+        "intercept-download",
+        (event) => {
+          const { url } = event.payload;
+          if (url) {
+            setInterceptedUrl(url);
+            setAddDialogOpen(true);
+          }
+        }
+      );
+      unlisteners.push(u4);
     }
 
     setup();

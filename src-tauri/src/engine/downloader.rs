@@ -21,25 +21,42 @@ pub async fn probe_capabilities(url: &str) -> Result<ServerCapabilities, EngineE
     let client = reqwest::Client::new();
     debug!(url = %url, "Probing server capabilities");
 
-    let req = client.head(url);
-    let resp = req.send().await?;
+    let mut resp = client.head(url).send().await?;
 
+    // If HEAD fails with 404, 405, etc., fallback to GET with Range: bytes=0-0
     if !resp.status().is_success() {
-        return Err(EngineError::ServerError {
-            status_code: resp.status().as_u16(),
-            message: format!("HEAD request failed with status: {}", resp.status()),
-        });
+        warn!(status = %resp.status(), "HEAD request failed, falling back to GET probe");
+        resp = client.get(url).header(header::RANGE, "bytes=0-0").send().await?;
+        
+        if !resp.status().is_success() {
+            return Err(EngineError::ServerError {
+                status_code: resp.status().as_u16(),
+                message: format!("Probe request failed with status: {}", resp.status()),
+            });
+        }
     }
 
     let headers = resp.headers();
-    let supports_range = headers
+    let mut supports_range = headers
         .get(header::ACCEPT_RANGES)
         .map(|v| v.to_str().unwrap_or("") == "bytes")
         .unwrap_or(false);
-    let content_length = headers
+    let mut content_length = headers
         .get(header::CONTENT_LENGTH)
         .and_then(|v| v.to_str().ok())
         .and_then(|v| v.parse::<u64>().ok());
+
+    // If we get a 206 Partial Content, Content-Length will be 1 (for bytes=0-0).
+    // The actual total size is in Content-Range: bytes 0-0/TOTAL_SIZE
+    if let Some(range_val) = headers.get(header::CONTENT_RANGE).and_then(|v| v.to_str().ok()) {
+        if let Some(idx) = range_val.find('/') {
+            if let Ok(total) = range_val[idx + 1..].parse::<u64>() {
+                content_length = Some(total);
+                supports_range = true;
+            }
+        }
+    }
+
     let etag = headers
         .get(header::ETAG)
         .and_then(|v| v.to_str().ok())
@@ -162,6 +179,8 @@ async fn attempt_download(
     let mut last_emit = Instant::now();
     let download_id_str = download_id.to_string();
 
+    let limiter = app_handle.state::<AppState>().bandwidth_limiter.clone();
+
     while let Some(chunk_result) = stream.next().await {
         if *cancel_rx.borrow() {
             writer.flush().await?;
@@ -169,6 +188,10 @@ async fn attempt_download(
         }
 
         let chunk = chunk_result.map_err(|e| EngineError::Network(e.to_string()))?;
+        
+        // Enforce global bandwidth limit
+        limiter.acquire(chunk.len()).await;
+        
         writer.write_all(&chunk).await?;
         tracker.update(chunk.len() as u64);
 

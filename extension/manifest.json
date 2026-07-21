@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "NextGenDM Interceptor",
+  "version": "1.0",
+  "description": "Intercepts browser downloads and forwards them to the NextGenDM desktop application.",
+  "permissions": [
+    "downloads"
+  ],
+  "host_permissions": [
+    "http://localhost:14200/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

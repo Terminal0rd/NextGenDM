@@ -2,7 +2,6 @@ import { useEffect, useMemo, useCallback } from "react";
 import { useDownloadStore } from "@/stores/downloadStore";
 import * as tauri from "@/lib/tauri";
 import type {
-  DownloadProgress,
   DownloadCategory,
   NewDownloadRequest,
 } from "@/types/download";

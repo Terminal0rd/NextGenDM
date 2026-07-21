@@ -3,8 +3,9 @@ use crate::db::repository;
 use crate::state::app_state::{AppState, DownloadHandle};
 use std::path::Path;
 use tauri::{AppHandle, State, Emitter, Manager};
+use tauri_plugin_notification::NotificationExt;
 use tokio::sync::watch;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 #[tauri::command]
 pub async fn add_download(
@@ -144,6 +145,12 @@ pub async fn start_download(app: AppHandle, state: State<'_, AppState>, id: Stri
                     let _ = repository::update_download_completion(&db, &id_clone, None, 0.0);
                 }
                 app_clone.emit("download-status-changed", serde_json::json!({"id": id_clone, "status": "completed"})).unwrap_or_default();
+                
+                let _ = app_clone.notification()
+                    .builder()
+                    .title("Download Complete")
+                    .body(format!("{} has finished downloading successfully.", info.filename))
+                    .show();
             }
             Err(EngineError::Cancelled) => {
                 info!(id = %id_clone, "Download cancelled/paused");
@@ -163,6 +170,12 @@ pub async fn start_download(app: AppHandle, state: State<'_, AppState>, id: Stri
                     "status": "failed",
                     "error": err_msg
                 })).unwrap_or_default();
+                
+                let _ = app_clone.notification()
+                    .builder()
+                    .title("Download Failed")
+                    .body(format!("{} failed to download: {}", info.filename, err_msg))
+                    .show();
             }
         }
 

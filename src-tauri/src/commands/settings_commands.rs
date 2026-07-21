@@ -36,5 +36,10 @@ pub async fn update_settings(
     }
 
     // Return the full updated settings so the frontend can sync
-    Ok(settings::load_settings(&db))
+    let new_settings = settings::load_settings(&db);
+    
+    // Apply changes dynamically
+    state.bandwidth_limiter.set_limit(new_settings.speed_limit_bytes_per_sec);
+    
+    Ok(new_settings)
 }

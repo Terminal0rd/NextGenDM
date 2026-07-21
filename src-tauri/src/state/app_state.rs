@@ -2,9 +2,10 @@
 
 use dashmap::DashMap;
 use rusqlite::Connection;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tokio::task::JoinHandle;
 use tokio::sync::watch;
+use crate::engine::limiter::GlobalBandwidthLimiter;
 
 /// A handle to a running download task, holding its cancellation channel
 /// and the `JoinHandle` to the spawned tokio task.
@@ -27,6 +28,8 @@ pub struct AppState {
     pub active_downloads: DashMap<String, DownloadHandle>,
     /// Shared HTTP client for all downloads.
     pub http_client: reqwest::Client,
+    /// Global bandwidth limiter across all downloads.
+    pub bandwidth_limiter: Arc<GlobalBandwidthLimiter>,
     /// Default download directory.
     pub download_dir: String,
 }
@@ -44,10 +47,14 @@ impl AppState {
             .build()
             .expect("Failed to build reqwest HTTP client");
 
+        let limiter = Arc::new(GlobalBandwidthLimiter::new());
+        limiter.clone().start_replenish_task();
+
         Self {
             db: Mutex::new(db),
             active_downloads: DashMap::new(),
             http_client,
+            bandwidth_limiter: limiter,
             download_dir,
         }
     }

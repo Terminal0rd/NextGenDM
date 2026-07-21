@@ -58,6 +58,52 @@ pub fn run() {
         .setup(|app| {
             info!("Running application setup");
 
+            // ── System Tray & Window Behavior ───────────────────────────
+            let quit_i = tauri::menu::MenuItem::with_id(app, "quit", "Quit NextGenDM", true, None::<&str>)?;
+            let show_i = tauri::menu::MenuItem::with_id(app, "show", "Show Window", true, None::<&str>)?;
+            let menu = tauri::menu::Menu::with_items(app, &[&show_i, &quit_i])?;
+
+            let _tray = tauri::tray::TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&menu)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    "show" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let tauri::tray::TrayIconEvent::Click {
+                        button: tauri::tray::MouseButton::Left,
+                        button_state: tauri::tray::MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
+
+            if let Some(window) = app.get_webview_window("main") {
+                let win_clone = window.clone();
+                window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        win_clone.hide().unwrap();
+                        api.prevent_close();
+                    }
+                });
+            }
+
             // ── Resolve app data directory ──────────────────────────────
             let app_data_dir = app
                 .path()
@@ -115,6 +161,13 @@ pub fn run() {
 
             // ── Create and manage AppState ──────────────────────────────
             let app_state = AppState::new(db, download_dir);
+            
+            // Set initial speed limit from DB
+            if let Ok(db) = app_state.db.lock() {
+                let settings = crate::config::settings::load_settings(&db);
+                app_state.bandwidth_limiter.set_limit(settings.speed_limit_bytes_per_sec);
+            }
+            
             app.manage(app_state);
 
             // ── Kickstart Queue Manager ─────────────────────────────────
@@ -122,6 +175,9 @@ pub fn run() {
             tauri::async_runtime::spawn_blocking(move || {
                 crate::engine::queue::try_start_next(app_handle);
             });
+
+            // ── Start Browser Extension Interceptor Server ──────────────
+            crate::engine::server::start_local_server(app.handle().clone());
 
             info!("Application setup complete");
             Ok(())

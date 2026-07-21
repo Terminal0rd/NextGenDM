@@ -22,6 +22,7 @@ interface DownloadStore {
   sortField: SortField;
   sortDirection: SortDirection;
   isAddDialogOpen: boolean;
+  interceptedUrl: string | null;
   isLoading: boolean;
   activeDownloadId: string | null;
 
@@ -32,6 +33,7 @@ interface DownloadStore {
   setSearchQuery: (query: string) => void;
   setSorting: (field: SortField, dir: SortDirection) => void;
   setAddDialogOpen: (open: boolean) => void;
+  setInterceptedUrl: (url: string | null) => void;
 
   // Data actions
   fetchDownloads: () => Promise<void>;
@@ -55,6 +57,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
   sortField: "created_at",
   sortDirection: "desc",
   isAddDialogOpen: false,
+  interceptedUrl: null,
   isLoading: false,
   activeDownloadId: null,
 
@@ -73,6 +76,8 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
     set({ sortField: field, sortDirection: dir }),
 
   setAddDialogOpen: (open) => set({ isAddDialogOpen: open }),
+
+  setInterceptedUrl: (url) => set({ interceptedUrl: url }),
 
   // ── Data actions ─────────────────────────────────────────────
 

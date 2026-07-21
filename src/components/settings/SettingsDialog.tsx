@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSettingsStore } from '@/stores/settingsStore';
-import { FolderSearch, Save, X } from 'lucide-react';
+import { FolderSearch } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 
 export function SettingsDialog() {

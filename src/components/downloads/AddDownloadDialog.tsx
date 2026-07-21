@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Clipboard, FolderOpen } from "lucide-react";
 import {
   AnimatedDialog,
@@ -49,6 +49,8 @@ function filenameFromUrl(url: string): string {
 export function AddDownloadDialog() {
   const open = useDownloadStore((s) => s.isAddDialogOpen);
   const setOpen = useDownloadStore((s) => s.setAddDialogOpen);
+  const interceptedUrl = useDownloadStore((s) => s.interceptedUrl);
+  const setInterceptedUrl = useDownloadStore((s) => s.setInterceptedUrl);
   const settings = useSettingsStore((s) => s.settings);
   const { add } = useDownloads();
 
@@ -61,6 +63,27 @@ export function AddDownloadDialog() {
   const [error, setError] = useState<string | null>(null);
 
   const urlValid = isValidUrl(url);
+
+  useEffect(() => {
+    if (open) {
+      if (interceptedUrl) {
+        setUrl(interceptedUrl);
+        setFilename(filenameFromUrl(interceptedUrl));
+        setInterceptedUrl(null);
+      }
+      
+      if (settings?.default_download_path && !savePath) {
+        setSavePath(settings.default_download_path);
+      }
+    } else {
+        // Reset when closed if not submitting
+        if (!isSubmitting) {
+            setUrl("");
+            setFilename("");
+            setError(null);
+        }
+    }
+  }, [open, interceptedUrl, setInterceptedUrl, settings?.default_download_path]);
 
   const handleUrlChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -60,3 +60,5 @@ dashmap = "6"
 # --- Filesystem & Platform ---
 dirs = "6"
 opener = "0.8.5"
+axum = "0.8.9"
+tower-http = { version = "0.7.0", features = ["cors"] }
