@@ -265,6 +265,7 @@ impl fmt::Display for DownloadPriority {
 pub struct DownloadInfo {
     pub id: String,
     pub url: String,
+    pub audio_url: Option<String>,
     pub final_url: Option<String>,
     pub filename: String,
     pub save_path: String,
@@ -309,6 +310,7 @@ pub struct DownloadProgress {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NewDownloadRequest {
     pub url: String,
+    pub audio_url: Option<String>,
     pub save_path: Option<String>,
     pub filename: Option<String>,
     pub category: Option<String>,

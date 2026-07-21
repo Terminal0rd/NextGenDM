@@ -12,6 +12,7 @@ src-tauri/target/
 # ---------- Tauri ----------
 src-tauri/gen/
 WixTools/
+src-tauri/bin/ffmpeg*.exe
 
 # ---------- Node.js ----------
 node_modules/

@@ -44,6 +44,7 @@ pub async fn add_download(
     let info = crate::engine::types::DownloadInfo {
         id: DownloadId::new().to_string_inner(),
         url,
+        audio_url: request.audio_url,
         final_url: None,
         filename: final_path
             .file_name()
@@ -131,6 +132,7 @@ pub async fn start_download(app: AppHandle, state: State<'_, AppState>, id: Stri
             app_clone.clone(),
             client,
             info.url.clone(),
+            info.audio_url.clone(),
             save_path,
             download_id,
             info.total_size,

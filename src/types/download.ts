@@ -25,6 +25,7 @@ export type DownloadPriority = "low" | "normal" | "high" | "critical";
 export interface DownloadInfo {
   id: string;
   url: string;
+  audio_url?: string;
   final_url: string | null;
   filename: string;
   save_path: string;
@@ -62,6 +63,7 @@ export interface DownloadProgress {
 /** Request payload for creating a new download. */
 export interface NewDownloadRequest {
   url: string;
+  audio_url?: string;
   save_path?: string;
   filename?: string;
   category?: string;

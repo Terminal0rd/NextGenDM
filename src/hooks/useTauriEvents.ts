@@ -62,9 +62,9 @@ export function useTauriEvents(): void {
       const u4 = await listen<any>(
         "intercept-download",
         (event) => {
-          const { url } = event.payload;
+          const { url, audio_url, filename } = event.payload;
           if (url) {
-            setInterceptedUrl(url);
+            setInterceptedUrl(url, audio_url, filename);
             setAddDialogOpen(true);
           }
         }

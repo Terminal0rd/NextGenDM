@@ -85,3 +85,9 @@ export async function getSettings(): Promise<AppSettings> {
 export async function updateSettings(settingsUpdate: AppSettingsUpdate): Promise<AppSettings> {
   return invoke<AppSettings>("update_settings", { settingsUpdate });
 }
+
+// ─── Media Extraction Commands ───────────────────────────────────────────────
+
+export async function extractMediaInfo(url: string): Promise<{ title: string | null; url: string; filename: string | null }> {
+  return invoke("extract_media_info", { url });
+}

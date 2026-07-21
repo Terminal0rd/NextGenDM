@@ -90,6 +90,21 @@ export function getCategoryIcon(category: DownloadCategory): string {
 }
 
 /**
+ * Infer download category from filename extension.
+ */
+export function getCategoryFromFilename(filename: string): DownloadCategory {
+  const ext = filename.split(".").pop()?.toLowerCase() || "";
+  if (["mp4", "mkv", "avi", "webm", "mov"].includes(ext)) return "video";
+  if (["mp3", "wav", "ogg", "flac", "m4a"].includes(ext)) return "audio";
+  if (["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext)) return "image";
+  if (["pdf", "doc", "docx", "txt", "rtf", "xls", "xlsx"].includes(ext)) return "document";
+  if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) return "compressed";
+  if (["exe", "msi", "dmg", "pkg", "deb", "rpm"].includes(ext)) return "program";
+  if (["iso", "img"].includes(ext)) return "iso";
+  return "other";
+}
+
+/**
  * Map a download status to a tailwind color class for the status dot.
  */
 export function getStatusColor(status: DownloadStatus): string {

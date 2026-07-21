@@ -1,0 +1,137 @@
+.ngdm-floating-btn {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 12px;
+  width: 140px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  z-index: 2147483647;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.ngdm-floating-btn:hover {
+  background: rgba(15, 23, 42, 1);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-color: rgba(6, 182, 212, 0.5); /* Cyan 500 */
+}
+
+.ngdm-popup {
+  position: absolute;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 2147483647;
+  min-width: 350px;
+  width: 380px;
+  max-height: 400px;
+  overflow-y: auto;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #f8fafc;
+}
+
+.ngdm-popup-title {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ngdm-popup-empty {
+  padding: 12px;
+  font-size: 13px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.ngdm-popup-section-header {
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #38bdf8;
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.ngdm-popup-section-header:first-child {
+  border-top: none;
+}
+
+.ngdm-popup-item {
+  display: grid;
+  grid-template-columns: 16px 1fr 85px 45px;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ngdm-col-sr {
+  color: #64748b;
+  text-align: right;
+  font-size: 12px;
+}
+
+.ngdm-col-name {
+  display: flex;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.ngdm-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ngdm-name-ext {
+  flex-shrink: 0;
+}
+
+.ngdm-col-quality {
+  color: #38bdf8;
+  font-weight: 500;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ngdm-col-size {
+  color: #94a3b8;
+  text-align: right;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.ngdm-popup-item:last-child {
+  border-bottom: none;
+}
+
+.ngdm-popup-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}

@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
 use tokio::io::AsyncWriteExt;
 use tokio::sync::watch;
-use tracing::{debug, error, warn};
+use tracing::{debug, error, warn, info};
 
 const PROGRESS_INTERVAL: Duration = Duration::from_millis(250);
 const MAX_RETRIES: u32 = 5;
@@ -101,6 +101,7 @@ pub async fn start_download(
     app_handle: tauri::AppHandle,
     client: reqwest::Client,
     url: String,
+    audio_url: Option<String>,
     save_path: &Path,
     download_id: DownloadId,
     total_size: Option<u64>,
@@ -114,7 +115,7 @@ pub async fn start_download(
         attempt += 1;
         let downloaded_so_far = crate::utils::fs::file_size(save_path);
         
-        match attempt_download(&client, &url, save_path, &download_id, total_size, downloaded_so_far, &mut cancel_rx, &app_handle).await {
+        match attempt_download_orchestrator(&client, &url, &audio_url, save_path, &download_id, total_size, downloaded_so_far, &mut cancel_rx, &app_handle).await {
             Ok(size) => return Ok(size),
             Err(EngineError::Cancelled) => return Err(EngineError::Cancelled),
             Err(e) if is_transient(&e) && attempt <= MAX_RETRIES => {
@@ -134,6 +135,55 @@ pub async fn start_download(
                 return Err(e);
             }
         }
+    }
+}
+
+async fn attempt_download_orchestrator(
+    client: &reqwest::Client,
+    url: &str,
+    audio_url: &Option<String>,
+    save_path: &Path,
+    download_id: &DownloadId,
+    total_size: Option<u64>,
+    downloaded_so_far: u64,
+    cancel_rx: &mut watch::Receiver<bool>,
+    app_handle: &tauri::AppHandle,
+) -> Result<u64, EngineError> {
+    if let Some(audio) = audio_url {
+        // Multi-stream download
+        let vid_path = save_path.with_extension("vid");
+        let aud_path = save_path.with_extension("aud");
+
+        // We download both streams sequentially. Since they are multi-threaded internally, it's fine.
+        info!(%download_id, "Downloading video stream");
+        let vid_size = attempt_download(client, url, &vid_path, download_id, None, 0, cancel_rx, app_handle).await?;
+        
+        info!(%download_id, "Downloading audio stream");
+        let aud_size = attempt_download(client, audio, &aud_path, download_id, None, 0, cancel_rx, app_handle).await?;
+
+        // Merge using ffmpeg
+        info!(%download_id, "Merging audio and video streams via FFmpeg");
+        use tauri_plugin_shell::ShellExt;
+        
+        let output = app_handle.shell().sidecar("ffmpeg")
+            .map_err(|e| EngineError::System(format!("Failed to spawn ffmpeg: {}", e)))?
+            .args(["-y", "-i", &vid_path.to_string_lossy(), "-i", &aud_path.to_string_lossy(), "-c", "copy", &save_path.to_string_lossy()])
+            .output()
+            .await
+            .map_err(|e| EngineError::System(format!("FFmpeg execution failed: {}", e)))?;
+
+        if !output.status.success() {
+            return Err(EngineError::System(format!("FFmpeg merge failed: {}", String::from_utf8_lossy(&output.stderr))));
+        }
+
+        // Clean up temps
+        let _ = std::fs::remove_file(&vid_path);
+        let _ = std::fs::remove_file(&aud_path);
+
+        Ok(vid_size + aud_size)
+    } else {
+        // Single stream download
+        attempt_download(client, url, save_path, download_id, total_size, downloaded_so_far, cancel_rx, app_handle).await
     }
 }
 

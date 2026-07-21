@@ -16,6 +16,7 @@ pub fn run_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
         CREATE TABLE IF NOT EXISTS downloads (
             id               TEXT PRIMARY KEY NOT NULL,
             url              TEXT NOT NULL,
+            audio_url        TEXT,
             final_url        TEXT,
             filename         TEXT NOT NULL,
             save_path        TEXT NOT NULL,
@@ -39,6 +40,9 @@ pub fn run_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
         );
         ",
     )?;
+
+    // Handle schema update for existing databases safely
+    let _ = conn.execute("ALTER TABLE downloads ADD COLUMN audio_url TEXT", []);
 
     // ── Indices for common queries ──────────────────────────────────────
     conn.execute_batch(

@@ -12,6 +12,7 @@ mod utils;
 
 use commands::download_commands;
 use commands::settings_commands;
+use commands::media_commands;
 use db::connection::initialize_database;
 use state::app_state::AppState;
 use tauri::Manager;
@@ -54,6 +55,7 @@ pub fn run() {
             download_commands::open_folder,
             settings_commands::get_settings,
             settings_commands::update_settings,
+            media_commands::extract_media_info,
         ])
         .setup(|app| {
             info!("Running application setup");

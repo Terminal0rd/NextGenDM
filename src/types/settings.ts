@@ -10,6 +10,7 @@ export interface AppSettings {
   language: string;
   auto_start_downloads: boolean;
   show_notifications: boolean;
+  routing_rules: Record<string, string>;
 }
 
 export type AppSettingsUpdate = Partial<AppSettings>;

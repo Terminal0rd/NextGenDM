@@ -18,6 +18,7 @@ pub struct AppSettings {
     pub language: String,
     pub auto_start_downloads: bool,
     pub show_notifications: bool,
+    pub routing_rules: std::collections::HashMap<String, String>,
 }
 
 impl Default for AppSettings {
@@ -26,6 +27,20 @@ impl Default for AppSettings {
             .unwrap_or_else(|| std::path::PathBuf::from("."))
             .to_string_lossy()
             .to_string();
+
+        let mut routing_rules = std::collections::HashMap::new();
+        if let Some(video_dir) = dirs::video_dir() {
+            routing_rules.insert("video".to_string(), video_dir.to_string_lossy().into_owned());
+        }
+        if let Some(audio_dir) = dirs::audio_dir() {
+            routing_rules.insert("audio".to_string(), audio_dir.to_string_lossy().into_owned());
+        }
+        if let Some(pic_dir) = dirs::picture_dir() {
+            routing_rules.insert("image".to_string(), pic_dir.to_string_lossy().into_owned());
+        }
+        if let Some(doc_dir) = dirs::document_dir() {
+            routing_rules.insert("document".to_string(), doc_dir.to_string_lossy().into_owned());
+        }
 
         Self {
             default_download_path: download_path,
@@ -39,6 +54,7 @@ impl Default for AppSettings {
             language: "en".to_string(),
             auto_start_downloads: true,
             show_notifications: true,
+            routing_rules,
         }
     }
 }
@@ -100,6 +116,10 @@ pub fn load_settings(conn: &Connection) -> AppSettings {
         .map(|v| v == "true" || v == "1")
         .unwrap_or(defaults.show_notifications);
 
+    let routing_rules = get_setting(conn, "routing_rules")
+        .and_then(|v| serde_json::from_str(&v).ok())
+        .unwrap_or(defaults.routing_rules);
+
     AppSettings {
         default_download_path,
         max_concurrent_downloads,
@@ -112,6 +132,7 @@ pub fn load_settings(conn: &Connection) -> AppSettings {
         language,
         auto_start_downloads,
         show_notifications,
+        routing_rules,
     }
 }
 
@@ -121,6 +142,36 @@ pub fn save_setting(conn: &Connection, key: &str, value: &str) -> Result<(), Eng
         "INSERT INTO settings (key, value) VALUES (?1, ?2)
          ON CONFLICT(key) DO UPDATE SET value = excluded.value",
         params![key, value],
-    )?;
+    )
+    .map_err(EngineError::Database)?;
+    Ok(())
+}
+
+/// Save all settings.
+pub fn save_settings(conn: &Connection, settings: &AppSettings) -> Result<(), EngineError> {
+    let pairs = [
+        ("default_download_path", settings.default_download_path.clone()),
+        ("max_concurrent_downloads", settings.max_concurrent_downloads.to_string()),
+        ("max_connections_per_download", settings.max_connections_per_download.to_string()),
+        ("speed_limit_bytes_per_sec", settings.speed_limit_bytes_per_sec.to_string()),
+        ("connect_timeout_secs", settings.connect_timeout_secs.to_string()),
+        ("read_timeout_secs", settings.read_timeout_secs.to_string()),
+        ("user_agent", settings.user_agent.clone()),
+        ("theme", settings.theme.clone()),
+        ("language", settings.language.clone()),
+        ("auto_start_downloads", settings.auto_start_downloads.to_string()),
+        ("show_notifications", settings.show_notifications.to_string()),
+        ("routing_rules", serde_json::to_string(&settings.routing_rules).unwrap_or_else(|_| "{}".to_string())),
+    ];
+
+    for (k, v) in pairs {
+        conn.execute(
+            "INSERT INTO settings (key, value) VALUES (?1, ?2)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            params![k, v],
+        )
+        .map_err(EngineError::Database)?;
+    }
+
     Ok(())
 }

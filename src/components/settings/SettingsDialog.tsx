@@ -124,6 +124,45 @@ export function SettingsDialog() {
           </div>
         </div>
 
+          {/* Routing Rules */}
+          <div className="pt-4 mt-2 border-t border-zinc-800">
+            <Label className="text-sm font-medium">Auto-Routing Rules</Label>
+            <p className="text-xs text-zinc-500 mb-4">Automatically save downloads of specific types to these folders.</p>
+            
+            <div className="grid gap-3">
+              {['video', 'audio', 'image', 'compressed', 'document', 'program'].map(cat => (
+                <div key={cat} className="flex items-center gap-2">
+                  <Label className="w-24 text-xs text-zinc-400 capitalize">{cat}</Label>
+                  <Input
+                    value={settings.routing_rules?.[cat] || ""}
+                    readOnly
+                    placeholder="Use default folder"
+                    className="h-8 text-xs bg-zinc-900 border-zinc-800"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 border-zinc-800 hover:bg-zinc-800"
+                    onClick={async () => {
+                      const selected = await open({
+                        directory: true,
+                        multiple: false,
+                        title: `Select folder for ${cat}`,
+                      });
+                      if (typeof selected === "string") {
+                        updateSettings({
+                          routing_rules: { ...settings.routing_rules, [cat]: selected }
+                        });
+                      }
+                    }}
+                  >
+                    <FolderSearch className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+
         <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
           <Button variant="ghost" onClick={() => setIsOpen(false)} className="hover:bg-zinc-800">
             Close

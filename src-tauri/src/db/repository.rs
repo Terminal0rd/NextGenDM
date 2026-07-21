@@ -16,6 +16,7 @@ fn row_to_download_info(row: &Row<'_>) -> Result<DownloadInfo, rusqlite::Error> 
     Ok(DownloadInfo {
         id: row.get("id")?,
         url: row.get("url")?,
+        audio_url: row.get("audio_url")?,
         final_url: row.get("final_url")?,
         filename: row.get("filename")?,
         save_path: row.get("save_path")?,
@@ -47,7 +48,7 @@ pub fn insert_download(conn: &Connection, info: &DownloadInfo) -> Result<(), Eng
 
     conn.execute(
         "INSERT INTO downloads (
-            id, url, final_url, filename, save_path, total_size,
+            id, url, audio_url, final_url, filename, save_path, total_size,
             downloaded_size, status, category, priority, mime_type,
             etag, last_modified, checksum_expected, checksum_actual,
             error_message, headers, created_at, updated_at,
@@ -57,11 +58,12 @@ pub fn insert_download(conn: &Connection, info: &DownloadInfo) -> Result<(), Eng
             ?7, ?8, ?9, ?10, ?11,
             ?12, ?13, ?14, ?15,
             ?16, ?17, ?18, ?19,
-            ?20, ?21, ?22
+            ?20, ?21, ?22, ?23
         )",
         params![
             info.id,
             info.url,
+            info.audio_url,
             info.final_url,
             info.filename,
             info.save_path,

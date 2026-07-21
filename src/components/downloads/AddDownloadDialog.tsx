@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Clipboard, FolderOpen } from "lucide-react";
+import { getCategoryFromFilename } from "@/lib/utils";
+import { extractMediaInfo } from "@/lib/tauri";
 import {
   AnimatedDialog,
   DialogContent,
@@ -50,6 +52,8 @@ export function AddDownloadDialog() {
   const open = useDownloadStore((s) => s.isAddDialogOpen);
   const setOpen = useDownloadStore((s) => s.setAddDialogOpen);
   const interceptedUrl = useDownloadStore((s) => s.interceptedUrl);
+  const interceptedAudioUrl = useDownloadStore((s) => s.interceptedAudioUrl);
+  const interceptedFilename = useDownloadStore((s) => s.interceptedFilename);
   const setInterceptedUrl = useDownloadStore((s) => s.setInterceptedUrl);
   const settings = useSettingsStore((s) => s.settings);
   const { add } = useDownloads();
@@ -62,18 +66,32 @@ export function AddDownloadDialog() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [mediaTitle, setMediaTitle] = useState<string | null>(null);
+
   const urlValid = isValidUrl(url);
 
   useEffect(() => {
     if (open) {
       if (interceptedUrl) {
         setUrl(interceptedUrl);
-        setFilename(filenameFromUrl(interceptedUrl));
+        const name = interceptedFilename || filenameFromUrl(interceptedUrl);
+        setFilename(name);
+        
+        // Auto-route based on file extension
+        const cat = getCategoryFromFilename(name);
+        setCategory(cat);
+        if (settings?.routing_rules && settings.routing_rules[cat]) {
+            setSavePath(settings.routing_rules[cat]);
+        } else if (settings?.default_download_path) {
+            setSavePath(settings.default_download_path);
+        }
+        
         setInterceptedUrl(null);
-      }
-      
-      if (settings?.default_download_path && !savePath) {
-        setSavePath(settings.default_download_path);
+      } else {
+        if (settings?.default_download_path && !savePath) {
+          setSavePath(settings.default_download_path);
+        }
       }
     } else {
         // Reset when closed if not submitting
@@ -83,18 +101,40 @@ export function AddDownloadDialog() {
             setError(null);
         }
     }
-  }, [open, interceptedUrl, setInterceptedUrl, settings?.default_download_path]);
+  }, [open, interceptedUrl, interceptedAudioUrl, interceptedFilename, setInterceptedUrl, settings?.default_download_path]);
 
   const handleUrlChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = e.target.value;
       setUrl(val);
       setError(null);
-      if (isValidUrl(val) && !filename) {
-        setFilename(filenameFromUrl(val));
+      if (isValidUrl(val)) {
+        if (val.includes("youtube.com") || val.includes("youtu.be") || val.includes("twitter.com") || val.includes("x.com")) {
+            setIsExtracting(true);
+            setMediaTitle(null);
+            extractMediaInfo(val)
+                .then(res => {
+                    setUrl(res.url); // Use the direct extracted URL
+                    if (res.title) setMediaTitle(res.title);
+                    if (res.filename) {
+                        setFilename(res.filename);
+                        setCategory(getCategoryFromFilename(res.filename));
+                    }
+                })
+                .catch(err => setError(String(err)))
+                .finally(() => setIsExtracting(false));
+        } else if (!filename) {
+            const name = filenameFromUrl(val);
+            setFilename(name);
+            const cat = getCategoryFromFilename(name);
+            setCategory(cat);
+            if (settings?.routing_rules && settings.routing_rules[cat]) {
+                setSavePath(settings.routing_rules[cat]);
+            }
+        }
       }
     },
-    [filename]
+    [filename, settings?.routing_rules]
   );
 
   const handlePaste = useCallback(async () => {
@@ -103,8 +143,30 @@ export function AddDownloadDialog() {
       if (text) {
         setUrl(text);
         setError(null);
-        if (isValidUrl(text) && !filename) {
-          setFilename(filenameFromUrl(text));
+        if (isValidUrl(text)) {
+          if (text.includes("youtube.com") || text.includes("youtu.be") || text.includes("twitter.com") || text.includes("x.com")) {
+              setIsExtracting(true);
+              setMediaTitle(null);
+              extractMediaInfo(text)
+                  .then(res => {
+                      setUrl(res.url); // Use the direct extracted URL
+                      if (res.title) setMediaTitle(res.title);
+                      if (res.filename) {
+                          setFilename(res.filename);
+                          setCategory(getCategoryFromFilename(res.filename));
+                      }
+                  })
+                  .catch(err => setError(String(err)))
+                  .finally(() => setIsExtracting(false));
+          } else if (!filename) {
+            const name = filenameFromUrl(text);
+            setFilename(name);
+            const cat = getCategoryFromFilename(name);
+            setCategory(cat);
+            if (settings?.routing_rules && settings.routing_rules[cat]) {
+                setSavePath(settings.routing_rules[cat]);
+            }
+          }
         }
       }
     } catch {
@@ -138,6 +200,7 @@ export function AddDownloadDialog() {
     try {
       await add({
         url,
+        audio_url: interceptedAudioUrl || undefined,
         filename: filename || undefined,
         save_path: savePath || undefined,
         category,
@@ -156,7 +219,7 @@ export function AddDownloadDialog() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [url, filename, savePath, category, priority, urlValid, isSubmitting, add, setOpen]);
+  }, [url, filename, savePath, category, priority, urlValid, isSubmitting, add, setOpen, interceptedAudioUrl]);
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
@@ -192,23 +255,32 @@ export function AddDownloadDialog() {
                 id="input-url"
                 value={url}
                 onChange={handleUrlChange}
-                placeholder="https://example.com/file.zip"
+                placeholder={interceptedUrl ? "URL fetched automatically" : "https://example.com/file.zip"}
                 className="flex-1 font-mono text-xs"
                 autoFocus
+                readOnly={!!interceptedUrl}
               />
-              <Button
-                id="btn-paste-url"
-                variant="outline"
-                size="icon"
-                onClick={handlePaste}
-                title="Paste from clipboard"
-                type="button"
-              >
-                <Clipboard className="h-4 w-4" />
-              </Button>
+              {!interceptedUrl && (
+                <Button
+                  id="btn-paste-url"
+                  variant="outline"
+                  size="icon"
+                  onClick={handlePaste}
+                  title="Paste from clipboard"
+                  type="button"
+                >
+                  <Clipboard className="h-4 w-4" />
+                </Button>
+              )}
             </div>
             {url && !urlValid && (
               <p className="text-xs text-red-400">Enter a valid HTTP/HTTPS URL</p>
+            )}
+            {isExtracting && (
+              <p className="text-xs text-blue-400 animate-pulse">Extracting media info...</p>
+            )}
+            {mediaTitle && (
+              <p className="text-xs text-emerald-400">Title: {mediaTitle}</p>
             )}
           </div>
 

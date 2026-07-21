@@ -24,6 +24,9 @@ pub enum EngineError {
     #[error("URL Parse error: {0}")]
     InvalidUrl(String),
 
+    #[error("System error: {0}")]
+    System(String),
+
     #[error("File system error: {0}")]
     FileSystem(String),
 
