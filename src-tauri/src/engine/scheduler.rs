@@ -44,7 +44,7 @@ pub fn start_scheduler(app: AppHandle) {
             } else {
                 // We are outside the window. Pause any active downloads.
                 let active = crate::db::repository::get_downloads_by_status(&db, "downloading").unwrap_or_default();
-                let mut active_count = active.len();
+                let active_count = active.len();
                 
                 for d in active {
                     let _ = crate::db::repository::update_download_status(&db, &d.id, "queued", None);

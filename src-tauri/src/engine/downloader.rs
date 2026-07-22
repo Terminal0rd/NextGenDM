@@ -284,7 +284,7 @@ async fn attempt_download_chunked(
     save_path: &Path,
     download_id: &DownloadId,
     total_size: Option<u64>,
-    mut cancel_rx: watch::Receiver<bool>,
+    cancel_rx: watch::Receiver<bool>,
     app_handle: &tauri::AppHandle,
 ) -> Result<u64, EngineError> {
     let size = match total_size {
@@ -328,7 +328,7 @@ async fn attempt_download_chunked(
         let url_c = url.to_string();
         let download_id_c = download_id.clone();
         let app_handle_c = app_handle.clone();
-        let mut cancel_rx_c = cancel_rx.clone();
+        let cancel_rx_c = cancel_rx.clone();
         let tracker_c = tracker.clone();
         
         let handle = tokio::spawn(async move {

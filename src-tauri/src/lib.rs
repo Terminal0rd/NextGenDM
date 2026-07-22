@@ -1,9 +1,10 @@
+#![allow(dead_code)]
 //! NextGenDM application entry point.
 //!
 //! Initialises logging, database, application state, Tauri plugins,
 //! and registers all IPC command handlers.
 
-mod commands;
+pub mod commands;
 mod config;
 mod db;
 mod engine;

@@ -43,6 +43,15 @@ interface DownloadStore {
   setSelectedCategory: (category: DownloadCategory | null) => void;
   setSearchQuery: (query: string) => void;
   setSorting: (field: SortField, dir: SortDirection) => void;
+
+  // Data actions
+  fetchDownloads: () => Promise<void>;
+  updateProgress: (progress: DownloadProgress) => void;
+  updateDownloadStatus: (id: string, status: DownloadStatus) => void;
+  addDownloadToList: (info: DownloadInfo) => void;
+  removeDownloadFromList: (id: string) => void;
+  markCompleted: (id: string) => void;
+  setError: (id: string, error: string) => void;
 }
 
 // ─── Store Implementation ────────────────────────────────────────────────────

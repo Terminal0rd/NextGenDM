@@ -1,45 +1,35 @@
 let currentPopup = null;
 
+const downloadIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+
 function createFloatingButton(video) {
   const btn = document.createElement('div');
   btn.className = 'ngdm-floating-btn';
-  btn.innerHTML = `
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-    Download Video
-  `;
+  btn.innerHTML = downloadIcon;
   
   btn.onclick = (e) => {
     e.stopPropagation();
     e.preventDefault();
     if (currentPopup) {
       currentPopup.el.remove();
-      currentPopup.btn.style.borderBottomLeftRadius = '';
-      currentPopup.btn.style.borderBottomRightRadius = '';
-      currentPopup.btn.style.borderBottomColor = '';
-      currentPopup.btn.style.zIndex = '';
       currentPopup = null;
       return;
     }
     
-    btn.innerHTML = 'Loading...';
+    btn.classList.add('ngdm-loading');
     
     // Fetch formats
     fetch(`http://localhost:14200/extract-media?url=${encodeURIComponent(window.location.href)}`)
       .then(res => res.json())
       .then(formats => {
-        btn.innerHTML = `
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          Download Video
-        `;
+        btn.classList.remove('ngdm-loading');
         showPopup(btn, formats);
       })
       .catch(err => {
-        btn.innerHTML = 'Error';
+        btn.classList.remove('ngdm-loading');
+        btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
         setTimeout(() => {
-          btn.innerHTML = `
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            Download Video
-          `;
+          btn.innerHTML = downloadIcon;
         }, 2000);
       });
   };
@@ -108,7 +98,7 @@ function showPopup(btn, formats) {
         item.onclick = (e) => {
           e.stopPropagation();
           
-          btn.innerHTML = `Loading...`;
+          btn.innerHTML = downloadIcon;
           
           // Send intercept
           fetch("http://localhost:14200/intercept", {
@@ -122,10 +112,6 @@ function showPopup(btn, formats) {
           });
           
           currentPopup.el.remove();
-          currentPopup.btn.style.borderBottomLeftRadius = '';
-          currentPopup.btn.style.borderBottomRightRadius = '';
-          currentPopup.btn.style.borderBottomColor = '';
-          currentPopup.btn.style.zIndex = '';
           currentPopup = null;
         };
         popup.appendChild(item);
@@ -141,13 +127,7 @@ function showPopup(btn, formats) {
   document.body.appendChild(popup);
   const rect = btn.getBoundingClientRect();
   popup.style.top = `${rect.bottom + window.scrollY - 1}px`;
-  popup.style.left = `${rect.left + window.scrollX}px`;
-  
-  // Make button look attached
-  btn.style.borderBottomLeftRadius = '0';
-  btn.style.borderBottomRightRadius = '0';
-  btn.style.borderBottomColor = 'transparent';
-  btn.style.zIndex = '2147483648'; // Above popup
+  popup.style.left = `${rect.left + window.scrollX - popup.offsetWidth + btn.offsetWidth}px`;
 
   currentPopup = { el: popup, btn: btn };
 }
@@ -156,10 +136,6 @@ function showPopup(btn, formats) {
 document.addEventListener('click', () => {
   if (currentPopup) {
     currentPopup.el.remove();
-    currentPopup.btn.style.borderBottomLeftRadius = '';
-    currentPopup.btn.style.borderBottomRightRadius = '';
-    currentPopup.btn.style.borderBottomColor = '';
-    currentPopup.btn.style.zIndex = '';
     currentPopup = null;
   }
 });

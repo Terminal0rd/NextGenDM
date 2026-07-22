@@ -1,4 +1,4 @@
-import { Plus, Play, Pause, Trash2, Settings, Globe } from 'lucide-react';
+import { Plus, Play, Pause, Settings, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useDownloadStore } from '@/stores/downloadStore';
@@ -46,13 +46,7 @@ export function Header() {
           <span className="text-[10px] font-medium tracking-wide">Pause All</span>
         </Button>
       </motion.div>
-      <div className="w-px h-8 bg-white/10 mx-1 rounded-full" />
-      <motion.div whileTap={{ scale: 0.95 }}>
-        <Button variant="ghost" className="flex flex-col h-14 w-16 gap-1 text-zinc-400 hover:text-red-400 hover:bg-white/5 transition-all">
-          <Trash2 className="h-5 w-5 drop-shadow-sm" />
-          <span className="text-[10px] font-medium tracking-wide">Delete All</span>
-        </Button>
-      </motion.div>
+
       <div className="flex-1" />
       <Button variant="ghost" size="icon" className="text-zinc-500 hover:text-zinc-300 hover:bg-white/5 transition-all" onClick={() => setSettingsOpen(true)}>
         <Settings className="h-5 w-5" />

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { useDownloadStore } from "@/stores/downloadStore";
 import { Globe, X, Download, Image as ImageIcon, Video, Music, File as FileIcon, Loader2 } from "lucide-react";
 import { getCategoryFromFilename } from "@/lib/utils";
 import { useDownloads } from "@/hooks/useDownloads";

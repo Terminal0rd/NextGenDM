@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { File, UploadCloud, RefreshCw, X, FileAudio, FileVideo, FileImage, FileText, CheckCircle2, AlertCircle, FolderOpen } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -60,7 +60,7 @@ export function ConvertView() {
   const [isDragging, setIsDragging] = useState(false);
   const [isConvertingAll, setIsConvertingAll] = useState(false);
   
-  const defaultDir = useSettingsStore(s => s.settings?.default_download_dir || "");
+  const defaultDir = useSettingsStore(s => s.settings?.default_download_path || "");
   const [outputDir, setOutputDir] = useState<string | null>(null);
 
   useEffect(() => {

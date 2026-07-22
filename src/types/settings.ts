@@ -11,6 +11,10 @@ export interface AppSettings {
   auto_start_downloads: boolean;
   show_notifications: boolean;
   routing_rules: Record<string, string>;
+  scheduler_enabled: boolean;
+  scheduler_start_time: string;
+  scheduler_stop_time: string;
+  scheduler_shutdown: boolean;
 }
 
 export type AppSettingsUpdate = Partial<AppSettings>;
