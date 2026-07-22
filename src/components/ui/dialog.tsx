@@ -16,7 +16,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay ref={ref} asChild {...props}>
     <motion.div
       className={cn(
-        "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm",
+        "fixed inset-0 z-50 bg-black/80 backdrop-blur-md",
         className
       )}
       initial={{ opacity: 0 }}
@@ -37,7 +37,7 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content ref={ref} asChild {...props}>
       <motion.div
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl shadow-black/40",
+          "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/10 bg-zinc-950/80 backdrop-blur-3xl p-6 shadow-[0_0_40px_rgba(0,0,0,0.5)]",
           className
         )}
         initial={{ opacity: 0, scale: 0.95, y: "-48%" , x: "-50%" }}

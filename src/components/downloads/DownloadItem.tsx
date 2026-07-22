@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Pause, Play, FolderOpen, X, Trash2, FileText, RotateCcw, Copy, Power } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { cn, formatBytes, formatSpeed, formatEta, formatDate, getStatusColor, getStatusLabel } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useDownloadStore } from '@/stores/downloadStore';
@@ -77,16 +78,31 @@ export function DownloadItem({ index, download, progress, onPause, onResume, onC
     fn();
   };
 
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.95 },
+    show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 300, damping: 24 } },
+    exit: { opacity: 0, scale: 0.9, transition: { duration: 0.2 } }
+  };
+
   return (
     <>
-      <div
+      <motion.div
+        layout
+        variants={itemVariants}
+        initial="hidden"
+        animate="show"
+        exit="exit"
+        whileHover={{ backgroundColor: "rgba(255,255,255,0.08)", zIndex: 10 }}
+        whileTap={{ scale: 0.99 }}
         onClick={() => setActiveId(id)}
         onContextMenu={handleContextMenu}
         className={cn(
-          `${GRID_COLS} items-center text-xs px-3 py-2 border-b border-zinc-800/50 hover:bg-zinc-800/30 cursor-pointer transition-colors gap-2`,
-          isSelected && "bg-zinc-800/60 hover:bg-zinc-800/60"
+          `${GRID_COLS} items-center text-xs px-3 py-2.5 border-b border-white/5 cursor-pointer transition-colors duration-200 gap-2 relative overflow-hidden`,
+          isSelected && "bg-white/10 hover:bg-white/10",
+          isActive && "spinning-rgb-border"
         )}
       >
+        <div className="relative z-20 flex items-center w-full col-span-full" style={{ display: 'contents' }}>
         {/* # */}
         <div className="text-center text-zinc-500">{index}</div>
         {/* File Name */}
@@ -130,52 +146,53 @@ export function DownloadItem({ index, download, progress, onPause, onResume, onC
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
-      </div>
+        </div>
+      </motion.div>
 
       {/* ── Right-Click Context Menu ─────────────────────────────── */}
       {ctxMenu.visible && (
         <div
           ref={ctxRef}
-          className="fixed z-50 min-w-[180px] rounded-lg bg-zinc-900 border border-zinc-700/60 shadow-2xl py-1 text-xs"
+          className="fixed z-50 min-w-[190px] rounded-xl bg-zinc-950/80 backdrop-blur-2xl border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)] py-1.5 text-xs animate-in fade-in zoom-in-95 duration-150"
           style={{ left: ctxMenu.x, top: ctxMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
           {(isPaused || isQueued || isFailed) && (
-            <button onClick={ctxAction(() => onResume(id))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-zinc-800 transition-colors">
+            <button onClick={ctxAction(() => onResume(id))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-white/10 transition-colors">
               <Play className="h-3.5 w-3.5 text-green-500" /> Resume
             </button>
           )}
           {isActive && (
-            <button onClick={ctxAction(() => onPause(id))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-zinc-800 transition-colors">
+            <button onClick={ctxAction(() => onPause(id))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-white/10 transition-colors">
               <Pause className="h-3.5 w-3.5 text-yellow-500" /> Pause
             </button>
           )}
           {(isActive || isPaused || isQueued) && (
-            <button onClick={ctxAction(() => onCancel(id))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-zinc-800 transition-colors">
+            <button onClick={ctxAction(() => onCancel(id))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-white/10 transition-colors">
               <X className="h-3.5 w-3.5 text-red-500" /> Cancel
             </button>
           )}
           {isFailed && (
-            <button onClick={ctxAction(() => onResume(id))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-zinc-800 transition-colors">
+            <button onClick={ctxAction(() => onResume(id))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-white/10 transition-colors">
               <RotateCcw className="h-3.5 w-3.5 text-blue-500" /> Retry
             </button>
           )}
 
-          <div className="h-px bg-zinc-800 my-1" />
+          <div className="h-px bg-white/10 my-1 mx-2" />
 
           {isComplete && (
-            <button onClick={ctxAction(() => onOpen(id))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-zinc-800 transition-colors">
+            <button onClick={ctxAction(() => onOpen(id))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-white/10 transition-colors">
               <FileText className="h-3.5 w-3.5 text-blue-400" /> Open File
             </button>
           )}
-          <button onClick={ctxAction(() => onOpenFolder(id))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-zinc-800 transition-colors">
+          <button onClick={ctxAction(() => onOpenFolder(id))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-white/10 transition-colors">
             <FolderOpen className="h-3.5 w-3.5 text-cyan-400" /> Open Folder
           </button>
-          <button onClick={ctxAction(() => navigator.clipboard.writeText(download.url))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-zinc-800 transition-colors">
+          <button onClick={ctxAction(() => navigator.clipboard.writeText(download.url))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-white/10 transition-colors">
             <Copy className="h-3.5 w-3.5 text-zinc-400" /> Copy URL
           </button>
 
-          <div className="h-px bg-zinc-800 my-1" />
+          <div className="h-px bg-white/10 my-1 mx-2" />
 
           {/* Shutdown after this download */}
           {!isComplete && (
@@ -189,7 +206,7 @@ export function DownloadItem({ index, download, progress, onPause, onResume, onC
                 "flex items-center gap-2.5 w-full px-3 py-1.5 text-left transition-colors",
                 shutdownAfterThis
                   ? "text-orange-400 hover:bg-orange-500/10"
-                  : "text-zinc-200 hover:bg-zinc-800"
+                  : "text-zinc-200 hover:bg-white/10"
               )}
             >
               <Power className={cn("h-3.5 w-3.5", shutdownAfterThis ? "text-orange-400" : "text-zinc-400")} />
@@ -197,9 +214,9 @@ export function DownloadItem({ index, download, progress, onPause, onResume, onC
             </button>
           )}
 
-          <div className="h-px bg-zinc-800 my-1" />
+          <div className="h-px bg-white/10 my-1 mx-2" />
 
-          <button onClick={ctxAction(() => onRemove(id, false))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-zinc-800 transition-colors">
+          <button onClick={ctxAction(() => onRemove(id, false))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-white/10 transition-colors">
             <Trash2 className="h-3.5 w-3.5 text-zinc-400" /> Remove from List
           </button>
           <button onClick={ctxAction(() => onRemove(id, true))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-red-400 hover:bg-red-500/10 transition-colors">

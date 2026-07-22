@@ -154,12 +154,16 @@ async fn attempt_download_orchestrator(
         let vid_path = save_path.with_extension("vid");
         let aud_path = save_path.with_extension("aud");
 
-        // We download both streams sequentially. Since they are multi-threaded internally, it's fine.
-        info!(%download_id, "Downloading video stream");
-        let vid_size = attempt_download(client, url, &vid_path, download_id, None, 0, cancel_rx, app_handle).await?;
+        // We download both streams concurrently to maximize speed
+        info!(%download_id, "Downloading video and audio streams concurrently");
         
-        info!(%download_id, "Downloading audio stream");
-        let aud_size = attempt_download(client, audio, &aud_path, download_id, None, 0, cancel_rx, app_handle).await?;
+        let mut cancel_rx_vid = cancel_rx.clone();
+        let mut cancel_rx_aud = cancel_rx.clone();
+
+        let (vid_size, aud_size) = tokio::try_join!(
+            attempt_download(client, url, &vid_path, download_id, None, 0, &mut cancel_rx_vid, app_handle),
+            attempt_download(client, audio, &aud_path, download_id, None, 0, &mut cancel_rx_aud, app_handle)
+        )?;
 
         // Merge using ffmpeg
         info!(%download_id, "Merging audio and video streams via FFmpeg");

@@ -4,6 +4,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { DownloadItem } from '@/components/downloads/DownloadItem';
 import { useDownloads } from '@/hooks/useDownloads';
 import { useDownloadStore } from '@/stores/downloadStore';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05 }
+  }
+};
 
 // Shared grid template used by both header and rows
 export const GRID_COLS = "grid grid-cols-[32px_1fr_72px_120px_80px_72px_100px_96px]";
@@ -27,9 +36,9 @@ export function DownloadList() {
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden bg-zinc-950">
+    <div className="flex flex-1 flex-col overflow-hidden bg-transparent">
       {/* ── Column Header ──────────────────────────────────── */}
-      <div className={`${GRID_COLS} items-center text-[11px] font-semibold text-zinc-400 bg-zinc-900 border-b border-zinc-800 px-3 py-1.5 gap-2`}>
+      <div className={`${GRID_COLS} items-center text-[11px] font-semibold text-zinc-500 tracking-wider uppercase bg-black/10 border-b border-white/5 px-3 py-2 gap-2 backdrop-blur-md`}>
         <div className="text-center">#</div>
         <div className="truncate">File Name</div>
         <div>Size</div>
@@ -41,22 +50,29 @@ export function DownloadList() {
       </div>
       {/* ── Rows ───────────────────────────────────────────── */}
       <ScrollArea className="flex-1">
-        <div className="flex flex-col">
-          {downloads.map((download, idx) => (
-            <DownloadItem
-              key={download.id}
-              index={idx + 1}
-              download={download}
-              progress={getProgress(download.id)}
-              onPause={pause}
-              onResume={resume}
-              onCancel={cancel}
-              onRemove={remove}
-              onOpen={openFile}
-              onOpenFolder={openFolder}
-            />
-          ))}
-        </div>
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="flex flex-col"
+        >
+          <AnimatePresence>
+            {downloads.map((download, idx) => (
+              <DownloadItem
+                key={download.id}
+                index={idx + 1}
+                download={download}
+                progress={getProgress(download.id)}
+                onPause={pause}
+                onResume={resume}
+                onCancel={cancel}
+                onRemove={remove}
+                onOpen={openFile}
+                onOpenFolder={openFolder}
+              />
+            ))}
+          </AnimatePresence>
+        </motion.div>
       </ScrollArea>
     </div>
   );

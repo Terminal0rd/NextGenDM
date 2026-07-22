@@ -35,9 +35,9 @@ export function SettingsDialog() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[500px] bg-zinc-950 border-zinc-800 text-zinc-200">
+      <DialogContent className="sm:max-w-[550px] bg-black/40 backdrop-blur-3xl border border-white/10 text-zinc-200 shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-2xl max-h-[85vh] overflow-y-auto custom-scrollbar">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-zinc-100">Settings</DialogTitle>
+          <DialogTitle className="text-xl font-semibold text-white drop-shadow-sm">Settings</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-6 py-4">
@@ -48,15 +48,15 @@ export function SettingsDialog() {
               <Input
                 value={settings.default_download_path}
                 readOnly
-                className="bg-zinc-900 border-zinc-800 text-sm font-mono text-zinc-300"
+                className="bg-white/5 border-white/10 text-sm font-mono text-zinc-300 shadow-inner"
               />
               <Button
                 variant="outline"
                 size="icon"
                 onClick={handlePickDirectory}
-                className="shrink-0 border-zinc-800 hover:bg-zinc-800"
+                className="shrink-0 border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
               >
-                <FolderSearch className="h-4 w-4" />
+                <FolderSearch className="h-4 w-4 text-cyan-400" />
               </Button>
             </div>
           </div>
@@ -70,7 +70,7 @@ export function SettingsDialog() {
               max={10}
               value={settings.max_concurrent_downloads}
               onChange={(e) => updateSettings({ max_concurrent_downloads: parseInt(e.target.value) || 3 })}
-              className="bg-zinc-900 border-zinc-800"
+              className="bg-white/5 border-white/10 shadow-inner focus-visible:ring-cyan-500/50"
             />
           </div>
 
@@ -85,7 +85,7 @@ export function SettingsDialog() {
                 const mb = parseFloat(e.target.value) || 0;
                 updateSettings({ speed_limit_bytes_per_sec: Math.floor(mb * 1024 * 1024) });
               }}
-              className="bg-zinc-900 border-zinc-800"
+              className="bg-white/5 border-white/10 shadow-inner focus-visible:ring-cyan-500/50"
             />
           </div>
 
@@ -100,7 +100,7 @@ export function SettingsDialog() {
               role="switch"
               aria-checked={settings.auto_start_downloads}
               onClick={() => updateSettings({ auto_start_downloads: !settings.auto_start_downloads })}
-              className={`peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 ${settings.auto_start_downloads ? 'bg-cyan-500' : 'bg-zinc-700'}`}
+              className={`peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 ${settings.auto_start_downloads ? 'bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.4)]' : 'bg-white/10'}`}
             >
               <span className={`pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform ${settings.auto_start_downloads ? 'translate-x-4' : 'translate-x-0'}`} />
             </button>
@@ -124,7 +124,7 @@ export function SettingsDialog() {
           </div>
 
           {/* Scheduler Settings */}
-          <div className="pt-4 mt-2 border-t border-zinc-800">
+          <div className="pt-4 mt-2 border-t border-white/10">
             <Label className="text-sm font-medium">Download Scheduler</Label>
             <p className="text-xs text-zinc-500 mb-4">Automatically start and stop queued downloads during a specific time window.</p>
             
@@ -179,7 +179,7 @@ export function SettingsDialog() {
           </div>
 
           {/* Routing Rules */}
-          <div className="pt-4 mt-2 border-t border-zinc-800">
+          <div className="pt-4 mt-2 border-t border-white/10">
             <Label className="text-sm font-medium">Auto-Routing Rules</Label>
             <p className="text-xs text-zinc-500 mb-4">Automatically save downloads of specific types to these folders.</p>
             
@@ -191,12 +191,12 @@ export function SettingsDialog() {
                     value={settings.routing_rules?.[cat] || ""}
                     readOnly
                     placeholder="Use default folder"
-                    className="h-8 text-xs bg-zinc-900 border-zinc-800"
+                    className="h-8 text-xs bg-white/5 border-white/10 shadow-inner"
                   />
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8 shrink-0 border-zinc-800 hover:bg-zinc-800"
+                    className="h-8 w-8 shrink-0 border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
                     onClick={async () => {
                       const selected = await open({
                         directory: true,
@@ -218,8 +218,8 @@ export function SettingsDialog() {
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
-          <Button variant="ghost" onClick={() => setIsOpen(false)} className="hover:bg-zinc-800">
+        <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+          <Button variant="ghost" onClick={() => setIsOpen(false)} className="hover:bg-white/10 text-zinc-300">
             Close
           </Button>
         </div>

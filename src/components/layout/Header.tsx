@@ -1,4 +1,5 @@
 import { Plus, Play, Pause, Trash2, Settings, Globe } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useDownloadStore } from '@/stores/downloadStore';
 import { useSettingsStore } from '@/stores/settingsStore';
@@ -19,31 +20,41 @@ export function Header() {
   };
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 border-b border-zinc-800 bg-zinc-950 px-4">
-      <Button variant="ghost" className="flex flex-col h-14 w-16 gap-1 text-zinc-400 hover:text-cyan-400 hover:bg-cyan-500/10" onClick={() => setAddDialogOpen(true)}>
-        <Plus className="h-5 w-5" />
-        <span className="text-[10px] font-medium">Add URL</span>
-      </Button>
-      <Button variant="ghost" className="flex flex-col h-14 w-16 gap-1 text-zinc-400 hover:text-indigo-400 hover:bg-indigo-500/10" onClick={() => setSiteGrabberOpen(true)}>
-        <Globe className="h-5 w-5" />
-        <span className="text-[10px] font-medium">Grab Site</span>
-      </Button>
-      <div className="w-px h-8 bg-zinc-800 mx-1" />
-      <Button variant="ghost" className="flex flex-col h-14 w-16 gap-1 text-zinc-400 hover:text-green-400 hover:bg-green-500/10" onClick={startAll}>
-        <Play className="h-5 w-5" />
-        <span className="text-[10px] font-medium">Start All</span>
-      </Button>
-      <Button variant="ghost" className="flex flex-col h-14 w-16 gap-1 text-zinc-400 hover:text-yellow-400 hover:bg-yellow-500/10" onClick={pauseAll}>
-        <Pause className="h-5 w-5" />
-        <span className="text-[10px] font-medium">Pause All</span>
-      </Button>
-      <div className="w-px h-8 bg-zinc-800 mx-1" />
-      <Button variant="ghost" className="flex flex-col h-14 w-16 gap-1 text-zinc-400 hover:text-red-400 hover:bg-red-500/10">
-        <Trash2 className="h-5 w-5" />
-        <span className="text-[10px] font-medium">Delete All</span>
-      </Button>
+    <header className="flex h-16 shrink-0 items-center gap-2 border-b border-white/5 bg-black/20 backdrop-blur-xl px-4 z-10 relative shadow-sm">
+      <motion.div whileTap={{ scale: 0.95 }}>
+        <Button variant="ghost" className="flex flex-col h-14 w-16 gap-1 text-zinc-400 hover:text-cyan-400 hover:bg-white/5 transition-all" onClick={() => setAddDialogOpen(true)}>
+          <Plus className="h-5 w-5 drop-shadow-sm" />
+          <span className="text-[10px] font-medium tracking-wide">Add URL</span>
+        </Button>
+      </motion.div>
+      <motion.div whileTap={{ scale: 0.95 }}>
+        <Button variant="ghost" className="flex flex-col h-14 w-16 gap-1 text-zinc-400 hover:text-indigo-400 hover:bg-white/5 transition-all" onClick={() => setSiteGrabberOpen(true)}>
+          <Globe className="h-5 w-5 drop-shadow-sm" />
+          <span className="text-[10px] font-medium tracking-wide">Grab Site</span>
+        </Button>
+      </motion.div>
+      <div className="w-px h-8 bg-white/10 mx-1 rounded-full" />
+      <motion.div whileTap={{ scale: 0.95 }}>
+        <Button variant="ghost" className="flex flex-col h-14 w-16 gap-1 text-zinc-400 hover:text-green-400 hover:bg-white/5 transition-all" onClick={startAll}>
+          <Play className="h-5 w-5 drop-shadow-sm" />
+          <span className="text-[10px] font-medium tracking-wide">Start All</span>
+        </Button>
+      </motion.div>
+      <motion.div whileTap={{ scale: 0.95 }}>
+        <Button variant="ghost" className="flex flex-col h-14 w-16 gap-1 text-zinc-400 hover:text-yellow-400 hover:bg-white/5 transition-all" onClick={pauseAll}>
+          <Pause className="h-5 w-5 drop-shadow-sm" />
+          <span className="text-[10px] font-medium tracking-wide">Pause All</span>
+        </Button>
+      </motion.div>
+      <div className="w-px h-8 bg-white/10 mx-1 rounded-full" />
+      <motion.div whileTap={{ scale: 0.95 }}>
+        <Button variant="ghost" className="flex flex-col h-14 w-16 gap-1 text-zinc-400 hover:text-red-400 hover:bg-white/5 transition-all">
+          <Trash2 className="h-5 w-5 drop-shadow-sm" />
+          <span className="text-[10px] font-medium tracking-wide">Delete All</span>
+        </Button>
+      </motion.div>
       <div className="flex-1" />
-      <Button variant="ghost" size="icon" className="text-zinc-500 hover:text-zinc-300" onClick={() => setSettingsOpen(true)}>
+      <Button variant="ghost" size="icon" className="text-zinc-500 hover:text-zinc-300 hover:bg-white/5 transition-all" onClick={() => setSettingsOpen(true)}>
         <Settings className="h-5 w-5" />
       </Button>
     </header>

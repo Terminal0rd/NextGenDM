@@ -12,6 +12,7 @@ import {
   File,
   Zap,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useDownloadStore } from "@/stores/downloadStore";
 import { useDownloads } from "@/hooks/useDownloads";
@@ -100,14 +101,14 @@ export function Sidebar() {
   return (
     <aside
       id="sidebar"
-      className="flex h-full w-60 flex-col border-r border-zinc-800/60 bg-zinc-950/70 backdrop-blur-xl"
+      className="flex h-full w-64 flex-col border-r border-white/5 bg-black/40 backdrop-blur-2xl z-10"
     >
       {/* ── Logo ──────────────────────────────────────────────── */}
       <div className="flex h-14 items-center gap-2.5 px-5">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-md shadow-blue-500/20">
-          <Zap className="h-4 w-4 text-white" />
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+          <Zap className="h-4 w-4 text-white drop-shadow-sm" />
         </div>
-        <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-lg font-bold tracking-tight text-transparent">
+        <span className="bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-lg font-bold tracking-tight text-transparent drop-shadow-[0_0_10px_rgba(34,211,238,0.3)]">
           NextGenDM
         </span>
       </div>
@@ -121,41 +122,49 @@ export function Sidebar() {
             const count = getCount(item.view);
 
             return (
-              <button
+              <motion.button
+                whileTap={{ scale: 0.98 }}
                 key={item.id}
                 id={item.id}
                 onClick={() => setCurrentView(item.view)}
                 className={cn(
-                  "group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
+                  "group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-150 overflow-hidden",
                   isActive
-                    ? "bg-zinc-800/80 text-foreground shadow-sm"
-                    : "text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200"
+                    ? "text-white shadow-sm"
+                    : "text-zinc-400 hover:text-white"
                 )}
               >
+                {isActive && (
+                  <motion.div 
+                    layoutId="sidebar-active-bg"
+                    className="absolute inset-0 bg-white/10 rounded-lg border border-white/10"
+                    transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                  />
+                )}
                 <span
                   className={cn(
-                    "transition-colors",
+                    "transition-colors relative z-10",
                     isActive
-                      ? "text-cyan-400"
+                      ? "text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"
                       : "text-zinc-500 group-hover:text-zinc-300"
                   )}
                 >
                   {item.icon}
                 </span>
-                <span className="flex-1 text-left">{item.label}</span>
+                <span className="flex-1 text-left relative z-10">{item.label}</span>
                 {count !== null && (
                   <span
                     className={cn(
-                      "min-w-[20px] rounded-md px-1.5 py-0.5 text-center text-[11px] font-semibold leading-none",
+                      "min-w-[20px] rounded-md px-1.5 py-0.5 text-center text-[11px] font-semibold leading-none relative z-10 transition-colors",
                       isActive
-                        ? "bg-cyan-500/15 text-cyan-400"
-                        : "bg-zinc-800 text-zinc-500"
+                        ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                        : "bg-white/5 text-zinc-500 border border-white/5"
                     )}
                   >
                     {count}
                   </span>
                 )}
-              </button>
+              </motion.button>
             );
           })}
         </nav>
@@ -175,34 +184,42 @@ export function Sidebar() {
               const count = getCategoryCounts(item.category);
 
               return (
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
                   key={item.id}
                   id={item.id}
                   onClick={() => setSelectedCategory(item.category)}
                   className={cn(
-                    "group flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-150",
+                    "group relative flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors duration-150 overflow-hidden",
                     isActive
-                      ? "bg-zinc-800/80 text-foreground"
-                      : "text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200"
+                      ? "text-white"
+                      : "text-zinc-400 hover:text-white"
                   )}
                 >
+                  {isActive && (
+                    <motion.div 
+                      layoutId="sidebar-active-bg"
+                      className="absolute inset-0 bg-white/10 rounded-lg border border-white/10"
+                      transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                    />
+                  )}
                   <span
                     className={cn(
-                      "transition-colors",
+                      "transition-colors relative z-10",
                       isActive
-                        ? "text-cyan-400"
+                        ? "text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"
                         : "text-zinc-500 group-hover:text-zinc-300"
                     )}
                   >
                     {item.icon}
                   </span>
-                  <span className="flex-1 text-left">{item.label}</span>
+                  <span className="flex-1 text-left relative z-10">{item.label}</span>
                   {count > 0 && (
-                    <span className="text-[11px] text-zinc-600">
+                    <span className="text-[11px] text-zinc-500 relative z-10">
                       {count}
                     </span>
                   )}
-                </button>
+                </motion.button>
               );
             })}
           </nav>
