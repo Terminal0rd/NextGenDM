@@ -3,6 +3,7 @@ use crate::db::repository;
 use crate::state::app_state::AppState;
 use tauri::{AppHandle, Manager};
 use tracing::{info, warn};
+use chrono::{Local, NaiveTime};
 
 /// Checks if there is available capacity and starts queued downloads if possible.
 pub fn try_start_next(app: AppHandle) {
@@ -20,7 +21,25 @@ pub fn try_start_next(app: AppHandle) {
         let settings = crate::config::settings::load_settings(&db);
         let max_concurrent = settings.max_concurrent_downloads;
 
-        // 2. Count active from DB (connecting + downloading)
+        // 2. Check scheduler window
+        if settings.scheduler_enabled {
+            let now = Local::now().time();
+            let start_time = NaiveTime::parse_from_str(&settings.scheduler_start_time, "%H:%M").unwrap_or_else(|_| NaiveTime::from_hms_opt(2, 0, 0).unwrap());
+            let stop_time = NaiveTime::parse_from_str(&settings.scheduler_stop_time, "%H:%M").unwrap_or_else(|_| NaiveTime::from_hms_opt(8, 0, 0).unwrap());
+
+            let in_window = if start_time < stop_time {
+                now >= start_time && now < stop_time
+            } else {
+                now >= start_time || now < stop_time
+            };
+
+            if !in_window {
+                // Scheduler is enabled but we are outside the active window. Do not start queued downloads.
+                return;
+            }
+        }
+
+        // 3. Count active from DB (connecting + downloading)
         let connecting_count = repository::get_downloads_by_status(&db, "connecting")
             .unwrap_or_default()
             .len() as u32;
@@ -35,7 +54,7 @@ pub fn try_start_next(app: AppHandle) {
 
         let available_slots = max_concurrent - active_count;
 
-        // 3. Fetch queued
+        // 4. Fetch queued
         let queued_downloads = match repository::get_downloads_by_status(&db, "queued") {
             Ok(downloads) => downloads,
             Err(e) => {
@@ -63,7 +82,7 @@ pub fn try_start_next(app: AppHandle) {
         }
     } // DB lock dropped here
 
-    // 4. Spawn the actual download tasks
+    // 5. Spawn the actual download tasks
     for id in to_start_ids {
         let app_clone = app.clone();
         

@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Pause, Play, FolderOpen, X, Trash2, FileText, RotateCcw, Copy } from 'lucide-react';
+import { Pause, Play, FolderOpen, X, Trash2, FileText, RotateCcw, Copy, Power } from 'lucide-react';
 import { cn, formatBytes, formatSpeed, formatEta, formatDate, getStatusColor, getStatusLabel } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useDownloadStore } from '@/stores/downloadStore';
 import { GRID_COLS } from '@/components/downloads/DownloadList';
+import { setShutdownAfter, getShutdownAfter } from '@/lib/tauri';
 import type { DownloadInfo, DownloadProgress } from '@/types/download';
 
 interface Props {
@@ -43,6 +44,14 @@ export function DownloadItem({ index, download, progress, onPause, onResume, onC
   // ── Context Menu ────────────────────────────────────────────
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState>({ visible: false, x: 0, y: 0 });
   const ctxRef = useRef<HTMLDivElement>(null);
+  const [shutdownAfterThis, setShutdownAfterThis] = useState(false);
+
+  // Check shutdown_after status when context menu opens
+  useEffect(() => {
+    if (ctxMenu.visible) {
+      getShutdownAfter().then(sid => setShutdownAfterThis(sid === id));
+    }
+  }, [ctxMenu.visible, id]);
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -165,6 +174,28 @@ export function DownloadItem({ index, download, progress, onPause, onResume, onC
           <button onClick={ctxAction(() => navigator.clipboard.writeText(download.url))} className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-zinc-800 transition-colors">
             <Copy className="h-3.5 w-3.5 text-zinc-400" /> Copy URL
           </button>
+
+          <div className="h-px bg-zinc-800 my-1" />
+
+          {/* Shutdown after this download */}
+          {!isComplete && (
+            <button
+              onClick={ctxAction(() => {
+                const newVal = !shutdownAfterThis;
+                setShutdownAfter(newVal ? id : null);
+                setShutdownAfterThis(newVal);
+              })}
+              className={cn(
+                "flex items-center gap-2.5 w-full px-3 py-1.5 text-left transition-colors",
+                shutdownAfterThis
+                  ? "text-orange-400 hover:bg-orange-500/10"
+                  : "text-zinc-200 hover:bg-zinc-800"
+              )}
+            >
+              <Power className={cn("h-3.5 w-3.5", shutdownAfterThis ? "text-orange-400" : "text-zinc-400")} />
+              {shutdownAfterThis ? "✓ Shutdown after this" : "Shutdown after this"}
+            </button>
+          )}
 
           <div className="h-px bg-zinc-800 my-1" />
 

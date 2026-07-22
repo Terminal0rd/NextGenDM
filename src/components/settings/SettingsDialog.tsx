@@ -122,7 +122,61 @@ export function SettingsDialog() {
               <span className={`pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform ${settings.show_notifications ? 'translate-x-4' : 'translate-x-0'}`} />
             </button>
           </div>
-        </div>
+
+          {/* Scheduler Settings */}
+          <div className="pt-4 mt-2 border-t border-zinc-800">
+            <Label className="text-sm font-medium">Download Scheduler</Label>
+            <p className="text-xs text-zinc-500 mb-4">Automatically start and stop queued downloads during a specific time window.</p>
+            
+            <div className="flex items-center justify-between mb-4">
+              <Label className="text-xs text-zinc-400">Enable Scheduler</Label>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={settings.scheduler_enabled}
+                onClick={() => updateSettings({ scheduler_enabled: !settings.scheduler_enabled })}
+                className={`peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 ${settings.scheduler_enabled ? 'bg-cyan-500' : 'bg-zinc-700'}`}
+              >
+                <span className={`pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform ${settings.scheduler_enabled ? 'translate-x-4' : 'translate-x-0'}`} />
+              </button>
+            </div>
+
+            <div className={`grid gap-3 transition-opacity ${settings.scheduler_enabled ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <Label className="text-xs text-zinc-400">Start Time</Label>
+                  <Input 
+                    type="time" 
+                    value={settings.scheduler_start_time} 
+                    onChange={(e) => updateSettings({ scheduler_start_time: e.target.value })}
+                    className="bg-zinc-900 border-zinc-800 h-8 mt-1 text-sm"
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label className="text-xs text-zinc-400">Stop Time</Label>
+                  <Input 
+                    type="time" 
+                    value={settings.scheduler_stop_time} 
+                    onChange={(e) => updateSettings({ scheduler_stop_time: e.target.value })}
+                    className="bg-zinc-900 border-zinc-800 h-8 mt-1 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between mt-2">
+                <Label className="text-xs text-zinc-400">Shutdown PC when done</Label>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={settings.scheduler_shutdown}
+                  onClick={() => updateSettings({ scheduler_shutdown: !settings.scheduler_shutdown })}
+                  className={`peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 ${settings.scheduler_shutdown ? 'bg-cyan-500' : 'bg-zinc-700'}`}
+                >
+                  <span className={`pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform ${settings.scheduler_shutdown ? 'translate-x-4' : 'translate-x-0'}`} />
+                </button>
+              </div>
+            </div>
+          </div>
 
           {/* Routing Rules */}
           <div className="pt-4 mt-2 border-t border-zinc-800">
@@ -162,6 +216,7 @@ export function SettingsDialog() {
               ))}
             </div>
           </div>
+        </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
           <Button variant="ghost" onClick={() => setIsOpen(false)} className="hover:bg-zinc-800">

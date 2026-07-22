@@ -1,4 +1,4 @@
-import { Plus, Play, Pause, Trash2, Settings } from 'lucide-react';
+import { Plus, Play, Pause, Trash2, Settings, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDownloadStore } from '@/stores/downloadStore';
 import { useSettingsStore } from '@/stores/settingsStore';
@@ -6,6 +6,7 @@ import { useDownloads } from '@/hooks/useDownloads';
 
 export function Header() {
   const setAddDialogOpen = useDownloadStore((s) => s.setAddDialogOpen);
+  const setSiteGrabberOpen = useDownloadStore((s) => s.setSiteGrabberOpen);
   const setSettingsOpen = useSettingsStore((s) => s.setIsOpen);
   const { downloads, pause, resume } = useDownloads();
 
@@ -22,6 +23,10 @@ export function Header() {
       <Button variant="ghost" className="flex flex-col h-14 w-16 gap-1 text-zinc-400 hover:text-cyan-400 hover:bg-cyan-500/10" onClick={() => setAddDialogOpen(true)}>
         <Plus className="h-5 w-5" />
         <span className="text-[10px] font-medium">Add URL</span>
+      </Button>
+      <Button variant="ghost" className="flex flex-col h-14 w-16 gap-1 text-zinc-400 hover:text-indigo-400 hover:bg-indigo-500/10" onClick={() => setSiteGrabberOpen(true)}>
+        <Globe className="h-5 w-5" />
+        <span className="text-[10px] font-medium">Grab Site</span>
       </Button>
       <div className="w-px h-8 bg-zinc-800 mx-1" />
       <Button variant="ghost" className="flex flex-col h-14 w-16 gap-1 text-zinc-400 hover:text-green-400 hover:bg-green-500/10" onClick={startAll}>

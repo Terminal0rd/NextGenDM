@@ -192,34 +192,38 @@ export function AddDownloadDialog() {
     }
   }, []);
 
-  const handleSubmit = useCallback(async () => {
-    if (!urlValid || isSubmitting) return;
-    setIsSubmitting(true);
-    setError(null);
+  const handleSubmit = useCallback(
+    async (start_now: boolean = true) => {
+      if (!urlValid || isSubmitting) return;
+      setIsSubmitting(true);
+      setError(null);
 
-    try {
-      await add({
-        url,
-        audio_url: interceptedAudioUrl || undefined,
-        filename: filename || undefined,
-        save_path: savePath || undefined,
-        category,
-        priority,
-      });
+      try {
+        await add({
+          url,
+          audio_url: interceptedAudioUrl || undefined,
+          filename: filename || undefined,
+          save_path: savePath || undefined,
+          category,
+          priority,
+          start_now,
+        });
 
-      // Reset & close
-      setUrl("");
-      setFilename("");
-      setSavePath("");
-      setCategory("other");
-      setPriority("normal");
-      setOpen(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : (typeof err === 'object' && err !== null && 'message' in err) ? String((err as any).message) : typeof err === 'object' ? JSON.stringify(err) : String(err));
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [url, filename, savePath, category, priority, urlValid, isSubmitting, add, setOpen, interceptedAudioUrl]);
+        // Reset & close
+        setUrl("");
+        setFilename("");
+        setSavePath("");
+        setCategory("other");
+        setPriority("normal");
+        setOpen(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : (typeof err === 'object' && err !== null && 'message' in err) ? String((err as any).message) : typeof err === 'object' ? JSON.stringify(err) : String(err));
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [url, filename, savePath, category, priority, urlValid, isSubmitting, add, setOpen, interceptedAudioUrl]
+  );
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
@@ -371,23 +375,35 @@ export function AddDownloadDialog() {
         </div>
 
         {/* ── Footer ──────────────────────────────────────────── */}
-        <DialogFooter className="mt-6">
+        <DialogFooter className="mt-6 flex items-center justify-between">
           <Button
             id="btn-cancel-dialog"
             variant="ghost"
             onClick={() => handleOpenChange(false)}
             disabled={isSubmitting}
+            className="hover:bg-zinc-800"
           >
             Cancel
           </Button>
-          <Button
-            id="btn-start-download"
-            variant="gradient"
-            onClick={handleSubmit}
-            disabled={!urlValid || isSubmitting}
-          >
-            {isSubmitting ? "Adding…" : "Download"}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              id="btn-queue-download"
+              variant="outline"
+              onClick={() => handleSubmit(false)}
+              disabled={!urlValid || isSubmitting}
+              className="border-zinc-800 hover:bg-zinc-800"
+            >
+              Download Later
+            </Button>
+            <Button
+              id="btn-start-download"
+              variant="gradient"
+              onClick={() => handleSubmit(true)}
+              disabled={!urlValid || isSubmitting}
+            >
+              {isSubmitting ? "Adding…" : "Download Now"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </AnimatedDialog>

@@ -10,9 +10,7 @@ mod engine;
 mod state;
 mod utils;
 
-use commands::download_commands;
-use commands::settings_commands;
-use commands::media_commands;
+use crate::commands::{download_commands, settings_commands, media_commands, grabber_commands};
 use db::connection::initialize_database;
 use state::app_state::AppState;
 use tauri::Manager;
@@ -53,9 +51,12 @@ pub fn run() {
             download_commands::get_active_progress,
             download_commands::open_file,
             download_commands::open_folder,
+            download_commands::set_shutdown_after,
+            download_commands::get_shutdown_after,
             settings_commands::get_settings,
             settings_commands::update_settings,
             media_commands::extract_media_info,
+            grabber_commands::grab_site,
         ])
         .setup(|app| {
             info!("Running application setup");
@@ -180,6 +181,9 @@ pub fn run() {
 
             // ── Start Browser Extension Interceptor Server ──────────────
             crate::engine::server::start_local_server(app.handle().clone());
+
+            // ── Start Download Scheduler ────────────────────────────────
+            crate::engine::scheduler::start_scheduler(app.handle().clone());
 
             info!("Application setup complete");
             Ok(())

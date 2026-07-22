@@ -17,6 +17,11 @@ pub struct InterceptPayload {
     pub filename: Option<String>,
 }
 
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct InterceptBatchPayload {
+    pub url: String,
+}
+
 #[derive(Clone)]
 struct ServerState {
     app: AppHandle,
@@ -34,6 +39,7 @@ pub fn start_local_server(app: AppHandle) {
 
         let app_router = Router::new()
             .route("/intercept", post(handle_intercept))
+            .route("/intercept-batch", post(handle_intercept_batch))
             .route("/extract-media", get(handle_extract_media))
             .layer(cors)
             .with_state(Arc::new(state));
@@ -71,6 +77,23 @@ async fn handle_intercept(
     }
 
     "OK"
+}
+
+async fn handle_intercept_batch(
+    State(state): State<Arc<ServerState>>,
+    Json(payload): Json<InterceptBatchPayload>,
+) -> &'static str {
+    info!("Received batch intercept from browser extension: {}", payload.url);
+    
+    let _ = state.app.emit("intercept-batch", payload);
+    
+    if let Some(window) = state.app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+    
+    "ok"
 }
 
 #[derive(Deserialize)]

@@ -315,7 +315,8 @@ pub struct NewDownloadRequest {
     pub filename: Option<String>,
     pub category: Option<String>,
     pub priority: Option<String>,
-    pub headers: Option<HashMap<String, String>>,
+    pub headers: Option<std::collections::HashMap<String, String>>,
+    pub start_now: Option<bool>,
 }
 
 // ─── ServerCapabilities ─────────────────────────────────────────────────────

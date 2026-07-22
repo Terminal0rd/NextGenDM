@@ -74,6 +74,14 @@ export async function openFolder(id: string): Promise<void> {
   return invoke<void>("open_folder", { id });
 }
 
+export async function setShutdownAfter(id: string | null): Promise<void> {
+  return invoke<void>("set_shutdown_after", { id });
+}
+
+export async function getShutdownAfter(): Promise<string | null> {
+  return invoke<string | null>("get_shutdown_after");
+}
+
 // ─── Settings Commands ───────────────────────────────────────────────────────
 
 import type { AppSettings, AppSettingsUpdate } from "@/types/settings";

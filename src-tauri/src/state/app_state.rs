@@ -2,7 +2,7 @@
 
 use dashmap::DashMap;
 use rusqlite::Connection;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use tokio::task::JoinHandle;
 use tokio::sync::watch;
 use crate::engine::limiter::GlobalBandwidthLimiter;
@@ -32,6 +32,8 @@ pub struct AppState {
     pub bandwidth_limiter: Arc<GlobalBandwidthLimiter>,
     /// Default download directory.
     pub download_dir: String,
+    /// If set, the system will shut down after this specific download completes.
+    pub shutdown_after_id: RwLock<Option<String>>,
 }
 
 impl AppState {
@@ -56,6 +58,7 @@ impl AppState {
             http_client,
             bandwidth_limiter: limiter,
             download_dir,
+            shutdown_after_id: RwLock::new(None),
         }
     }
 }

@@ -19,6 +19,10 @@ pub struct AppSettings {
     pub auto_start_downloads: bool,
     pub show_notifications: bool,
     pub routing_rules: std::collections::HashMap<String, String>,
+    pub scheduler_enabled: bool,
+    pub scheduler_start_time: String,
+    pub scheduler_stop_time: String,
+    pub scheduler_shutdown: bool,
 }
 
 impl Default for AppSettings {
@@ -51,10 +55,14 @@ impl Default for AppSettings {
             read_timeout_secs: 60,
             user_agent: "NextGenDM/0.1.0".to_string(),
             theme: "dark".to_string(),
-            language: "en".to_string(),
+            language: "en-US".to_string(),
             auto_start_downloads: true,
             show_notifications: true,
             routing_rules,
+            scheduler_enabled: false,
+            scheduler_start_time: "02:00".to_string(),
+            scheduler_stop_time: "08:00".to_string(),
+            scheduler_shutdown: false,
         }
     }
 }
@@ -120,6 +128,20 @@ pub fn load_settings(conn: &Connection) -> AppSettings {
         .and_then(|v| serde_json::from_str(&v).ok())
         .unwrap_or(defaults.routing_rules);
 
+    let scheduler_enabled = get_setting(conn, "scheduler_enabled")
+        .map(|v| v == "true" || v == "1")
+        .unwrap_or(defaults.scheduler_enabled);
+
+    let scheduler_start_time = get_setting(conn, "scheduler_start_time")
+        .unwrap_or(defaults.scheduler_start_time);
+
+    let scheduler_stop_time = get_setting(conn, "scheduler_stop_time")
+        .unwrap_or(defaults.scheduler_stop_time);
+
+    let scheduler_shutdown = get_setting(conn, "scheduler_shutdown")
+        .map(|v| v == "true" || v == "1")
+        .unwrap_or(defaults.scheduler_shutdown);
+
     AppSettings {
         default_download_path,
         max_concurrent_downloads,
@@ -133,6 +155,10 @@ pub fn load_settings(conn: &Connection) -> AppSettings {
         auto_start_downloads,
         show_notifications,
         routing_rules,
+        scheduler_enabled,
+        scheduler_start_time,
+        scheduler_stop_time,
+        scheduler_shutdown,
     }
 }
 
@@ -161,7 +187,14 @@ pub fn save_settings(conn: &Connection, settings: &AppSettings) -> Result<(), En
         ("language", settings.language.clone()),
         ("auto_start_downloads", settings.auto_start_downloads.to_string()),
         ("show_notifications", settings.show_notifications.to_string()),
-        ("routing_rules", serde_json::to_string(&settings.routing_rules).unwrap_or_else(|_| "{}".to_string())),
+        (
+            "routing_rules",
+            serde_json::to_string(&settings.routing_rules).unwrap_or_default(),
+        ),
+        ("scheduler_enabled", settings.scheduler_enabled.to_string()),
+        ("scheduler_start_time", settings.scheduler_start_time.clone()),
+        ("scheduler_stop_time", settings.scheduler_stop_time.clone()),
+        ("scheduler_shutdown", settings.scheduler_shutdown.to_string()),
     ];
 
     for (k, v) in pairs {

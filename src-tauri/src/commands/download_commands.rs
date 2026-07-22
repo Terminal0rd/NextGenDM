@@ -5,7 +5,7 @@ use std::path::Path;
 use tauri::{AppHandle, State, Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 use tokio::sync::watch;
-use tracing::{error, info, warn};
+use tracing::{error, info};
 
 #[tauri::command]
 pub async fn add_download(
@@ -72,7 +72,7 @@ pub async fn add_download(
     };
 
     repository::insert_download(&db, &info).map_err(|e| e.to_string())?;
-    let auto_start = settings.auto_start_downloads;
+    let auto_start = request.start_now.unwrap_or(settings.auto_start_downloads);
     drop(db);
 
     if auto_start {
@@ -153,6 +153,26 @@ pub async fn start_download(app: AppHandle, state: State<'_, AppState>, id: Stri
                     .title("Download Complete")
                     .body(format!("{} has finished downloading successfully.", info.filename))
                     .show();
+
+                // Check if this download was flagged for shutdown-after-completion
+                {
+                    let should_shutdown = {
+                        let lock = state_guard.shutdown_after_id.read().unwrap();
+                        lock.as_deref() == Some(id_clone.as_str())
+                    };
+                    if should_shutdown {
+                        info!(id = %id_clone, "Shutdown-after triggered for this download. Shutting down.");
+                        // Clear the flag
+                        if let Ok(mut lock) = state_guard.shutdown_after_id.write() {
+                            *lock = None;
+                        }
+                        #[cfg(target_os = "windows")]
+                        {
+                            use tauri_plugin_shell::ShellExt;
+                            let _ = app_clone.shell().command("shutdown").args(["/s", "/t", "60"]).spawn();
+                        }
+                    }
+                }
             }
             Err(EngineError::Cancelled) => {
                 info!(id = %id_clone, "Download cancelled/paused");
@@ -348,4 +368,17 @@ pub async fn open_folder(app: AppHandle, _state: State<'_, AppState>, id: String
         let _ = opener::open(folder).map_err(|e| e.to_string());
     }
     Ok(())
+}
+
+#[tauri::command]
+pub async fn set_shutdown_after(_app: AppHandle, state: State<'_, AppState>, id: Option<String>) -> Result<(), String> {
+    let mut lock = state.shutdown_after_id.write().map_err(|e| e.to_string())?;
+    *lock = id;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn get_shutdown_after(_app: AppHandle, state: State<'_, AppState>) -> Result<Option<String>, String> {
+    let lock = state.shutdown_after_id.read().map_err(|e| e.to_string())?;
+    Ok(lock.clone())
 }

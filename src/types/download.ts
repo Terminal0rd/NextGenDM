@@ -69,6 +69,7 @@ export interface NewDownloadRequest {
   category?: string;
   priority?: string;
   headers?: Record<string, string>;
+  start_now?: boolean;
 }
 
 // ─── UI State Types ──────────────────────────────────────────────────────────

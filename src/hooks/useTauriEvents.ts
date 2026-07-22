@@ -17,7 +17,9 @@ export function useTauriEvents(): void {
   const fetchDownloads = useDownloadStore((s) => s.fetchDownloads);
   const removeDownloadFromList = useDownloadStore((s) => s.removeDownloadFromList);
   const setInterceptedUrl = useDownloadStore((s) => s.setInterceptedUrl);
+  const setInterceptedBatchUrl = useDownloadStore((s) => s.setInterceptedBatchUrl);
   const setAddDialogOpen = useDownloadStore((s) => s.setAddDialogOpen);
+  const setSiteGrabberOpen = useDownloadStore((s) => s.setSiteGrabberOpen);
 
   useEffect(() => {
     const unlisteners: UnlistenFn[] = [];
@@ -70,6 +72,18 @@ export function useTauriEvents(): void {
         }
       );
       unlisteners.push(u4);
+
+      const u5 = await listen<any>(
+        "intercept-batch",
+        (event) => {
+          const { url } = event.payload;
+          if (url) {
+            setInterceptedBatchUrl(url);
+            setSiteGrabberOpen(true);
+          }
+        }
+      );
+      unlisteners.push(u5);
     }
 
     setup();

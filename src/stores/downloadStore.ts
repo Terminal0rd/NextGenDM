@@ -18,12 +18,22 @@ interface DownloadStore {
   activeProgress: Map<string, DownloadProgress>;
   currentView: SidebarView;
   selectedCategory: DownloadCategory | null;
-  searchQuery: string;
-  sortField: SortField;
-  sortDirection: SortDirection;
+  isAddDialogOpen: boolean;
+  isSiteGrabberOpen: boolean;
+  setAddDialogOpen: (open: boolean) => void;
+  setSiteGrabberOpen: (open: boolean) => void;
+
+  // ── Intercept State ──
   interceptedUrl: string | null;
   interceptedAudioUrl: string | null;
   interceptedFilename: string | null;
+  interceptedBatchUrl: string | null;
+  setInterceptedUrl: (url: string | null, audio_url?: string | null, filename?: string | null) => void;
+  setInterceptedBatchUrl: (url: string | null) => void;
+
+  searchQuery: string;
+  sortField: SortField;
+  sortDirection: SortDirection;
   isLoading: boolean;
   activeDownloadId: string | null;
 
@@ -33,17 +43,6 @@ interface DownloadStore {
   setSelectedCategory: (category: DownloadCategory | null) => void;
   setSearchQuery: (query: string) => void;
   setSorting: (field: SortField, dir: SortDirection) => void;
-  setAddDialogOpen: (open: boolean) => void;
-  setInterceptedUrl: (url: string | null, audioUrl?: string | null, filename?: string | null) => void;
-
-  // Data actions
-  fetchDownloads: () => Promise<void>;
-  updateProgress: (progress: DownloadProgress) => void;
-  updateDownloadStatus: (id: string, status: DownloadStatus) => void;
-  addDownloadToList: (info: DownloadInfo) => void;
-  removeDownloadFromList: (id: string) => void;
-  markCompleted: (id: string) => void;
-  setError: (id: string, error: string) => void;
 }
 
 // ─── Store Implementation ────────────────────────────────────────────────────
@@ -57,10 +56,21 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
   searchQuery: "",
   sortField: "created_at",
   sortDirection: "desc",
+  // ── Modals ──
   isAddDialogOpen: false,
+  isSiteGrabberOpen: false,
+  setAddDialogOpen: (open) => set({ isAddDialogOpen: open }),
+  setSiteGrabberOpen: (open) => set({ isSiteGrabberOpen: open }),
+
+  // ── Intercept ──
   interceptedUrl: null,
   interceptedAudioUrl: null,
   interceptedFilename: null,
+  interceptedBatchUrl: null,
+  setInterceptedUrl: (url, audio_url, filename) => 
+    set({ interceptedUrl: url, interceptedAudioUrl: audio_url || null, interceptedFilename: filename || null }),
+  setInterceptedBatchUrl: (url) => set({ interceptedBatchUrl: url }),
+
   isLoading: false,
   activeDownloadId: null,
 
@@ -77,14 +87,6 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
 
   setSorting: (field, dir) =>
     set({ sortField: field, sortDirection: dir }),
-
-  setAddDialogOpen: (open) => set({ isAddDialogOpen: open }),
-
-  setInterceptedUrl: (url, audioUrl = null, filename = null) => set({ 
-    interceptedUrl: url, 
-    interceptedAudioUrl: audioUrl,
-    interceptedFilename: filename 
-  }),
 
   // ── Data actions ─────────────────────────────────────────────
 
