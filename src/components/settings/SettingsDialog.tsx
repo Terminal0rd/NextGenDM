@@ -106,6 +106,36 @@ export function SettingsDialog() {
             </button>
           </div>
 
+          {/* Run on Startup */}
+          <div className="flex items-center justify-between mt-2">
+            <div className="grid gap-1.5">
+              <Label className="text-sm font-medium">Run on Startup</Label>
+              <p className="text-xs text-zinc-500">Launch NextGenDM automatically when you log into your laptop.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={settings.run_on_startup}
+              onClick={async () => {
+                const newVal = !settings.run_on_startup;
+                updateSettings({ run_on_startup: newVal });
+                try {
+                  const { enable, disable } = await import('@tauri-apps/plugin-autostart');
+                  if (newVal) {
+                    await enable();
+                  } else {
+                    await disable();
+                  }
+                } catch(e) {
+                  console.error("Failed to set autostart", e);
+                }
+              }}
+              className={`peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 ${settings.run_on_startup ? 'bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.4)]' : 'bg-white/10'}`}
+            >
+              <span className={`pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform ${settings.run_on_startup ? 'translate-x-4' : 'translate-x-0'}`} />
+            </button>
+          </div>
+
           {/* Show Notifications */}
           <div className="flex items-center justify-between">
             <div className="grid gap-1.5">

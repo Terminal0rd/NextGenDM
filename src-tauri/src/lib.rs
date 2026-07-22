@@ -40,6 +40,10 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec!["--minimized"]),
+        ))
         .invoke_handler(tauri::generate_handler![
             download_commands::add_download,
             download_commands::start_download,
@@ -168,10 +172,17 @@ pub fn run() {
             // ── Create and manage AppState ──────────────────────────────
             let app_state = AppState::new(db, download_dir);
             
-            // Set initial speed limit from DB
+            // Set initial speed limit and autostart from DB
             if let Ok(db) = app_state.db.lock() {
                 let settings = crate::config::settings::load_settings(&db);
                 app_state.bandwidth_limiter.set_limit(settings.speed_limit_bytes_per_sec);
+
+                use tauri_plugin_autostart::ManagerExt;
+                if settings.run_on_startup {
+                    let _ = app.autolaunch().enable();
+                } else {
+                    let _ = app.autolaunch().disable();
+                }
             }
             
             app.manage(app_state);

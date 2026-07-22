@@ -23,6 +23,7 @@ pub struct AppSettings {
     pub scheduler_start_time: String,
     pub scheduler_stop_time: String,
     pub scheduler_shutdown: bool,
+    pub run_on_startup: bool,
 }
 
 impl Default for AppSettings {
@@ -63,6 +64,7 @@ impl Default for AppSettings {
             scheduler_start_time: "02:00".to_string(),
             scheduler_stop_time: "08:00".to_string(),
             scheduler_shutdown: false,
+            run_on_startup: true,
         }
     }
 }
@@ -142,6 +144,10 @@ pub fn load_settings(conn: &Connection) -> AppSettings {
         .map(|v| v == "true" || v == "1")
         .unwrap_or(defaults.scheduler_shutdown);
 
+    let run_on_startup = get_setting(conn, "run_on_startup")
+        .map(|v| v == "true" || v == "1")
+        .unwrap_or(defaults.run_on_startup);
+
     AppSettings {
         default_download_path,
         max_concurrent_downloads,
@@ -159,6 +165,7 @@ pub fn load_settings(conn: &Connection) -> AppSettings {
         scheduler_start_time,
         scheduler_stop_time,
         scheduler_shutdown,
+        run_on_startup,
     }
 }
 
@@ -195,6 +202,7 @@ pub fn save_settings(conn: &Connection, settings: &AppSettings) -> Result<(), En
         ("scheduler_start_time", settings.scheduler_start_time.clone()),
         ("scheduler_stop_time", settings.scheduler_stop_time.clone()),
         ("scheduler_shutdown", settings.scheduler_shutdown.to_string()),
+        ("run_on_startup", settings.run_on_startup.to_string()),
     ];
 
     for (k, v) in pairs {

@@ -10,6 +10,7 @@ export interface AppSettings {
   language: string;
   auto_start_downloads: boolean;
   show_notifications: boolean;
+  run_on_startup: boolean;
   routing_rules: Record<string, string>;
   scheduler_enabled: boolean;
   scheduler_start_time: string;
