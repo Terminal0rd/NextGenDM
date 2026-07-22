@@ -47,7 +47,8 @@
     },
     "externalBin": [
       "bin/yt-dlp",
-      "bin/ffmpeg"
+      "bin/ffmpeg",
+      "bin/pandoc"
     ]
   }
 }

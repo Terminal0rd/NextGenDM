@@ -11,6 +11,7 @@ import {
   Archive,
   File,
   Zap,
+  Repeat,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -222,6 +223,49 @@ export function Sidebar() {
                 </motion.button>
               );
             })}
+
+          </nav>
+        </div>
+
+        <Separator className="mx-1 my-2" />
+
+        {/* ── Tools ───────────────────────────────────────────── */}
+        <div className="py-2">
+          <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+            Tools
+          </p>
+          <nav className="space-y-0.5">
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              key="nav-convert"
+              id="nav-convert"
+              onClick={() => setCurrentView("convert")}
+              className={cn(
+                "group relative flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors duration-150 overflow-hidden",
+                currentView === "convert"
+                  ? "text-white"
+                  : "text-zinc-400 hover:text-white"
+              )}
+            >
+              {currentView === "convert" && (
+                <motion.div 
+                  layoutId="sidebar-active-bg"
+                  className="absolute inset-0 bg-white/10 rounded-lg border border-white/10"
+                  transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                />
+              )}
+              <span
+                className={cn(
+                  "transition-colors relative z-10",
+                  currentView === "convert"
+                    ? "text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"
+                    : "text-zinc-500 group-hover:text-zinc-300"
+                )}
+              >
+                <Repeat className="h-4 w-4" />
+              </span>
+              <span className="flex-1 text-left relative z-10">Convert</span>
+            </motion.button>
           </nav>
         </div>
       </ScrollArea>

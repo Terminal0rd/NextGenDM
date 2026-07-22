@@ -79,7 +79,8 @@ export type SidebarView =
   | "active"
   | "completed"
   | "failed"
-  | "category";
+  | "category"
+  | "convert";
 
 export type SortField = "created_at" | "filename" | "total_size" | "status";
 

@@ -10,7 +10,7 @@ mod engine;
 mod state;
 mod utils;
 
-use crate::commands::{download_commands, settings_commands, media_commands, grabber_commands};
+use crate::commands::{download_commands, settings_commands, media_commands, grabber_commands, convert_commands};
 use db::connection::initialize_database;
 use state::app_state::AppState;
 use tauri::Manager;
@@ -57,6 +57,8 @@ pub fn run() {
             settings_commands::update_settings,
             media_commands::extract_media_info,
             grabber_commands::grab_site,
+            convert_commands::convert_media,
+            convert_commands::show_in_folder,
         ])
         .setup(|app| {
             info!("Running application setup");

@@ -5,6 +5,7 @@ import { DownloadList } from "@/components/downloads/DownloadList";
 import { AddDownloadDialog } from "@/components/downloads/AddDownloadDialog";
 import { SiteGrabberDialog } from "@/components/downloads/SiteGrabberDialog";
 import { DownloadInspector } from "@/components/downloads/DownloadInspector";
+import { ConvertView } from "@/components/convert/ConvertView";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useDownloadStore } from "@/stores/downloadStore";
@@ -15,6 +16,7 @@ export function MainLayout() {
   const isSiteGrabberOpen = useDownloadStore((s) => s.isSiteGrabberOpen);
   const setSiteGrabberOpen = useDownloadStore((s) => s.setSiteGrabberOpen);
   const interceptedBatchUrl = useDownloadStore((s) => s.interceptedBatchUrl);
+  const currentView = useDownloadStore((s) => s.currentView);
 
   useEffect(() => {
     loadSettings();
@@ -41,8 +43,14 @@ export function MainLayout() {
         <div className="flex flex-1 flex-col overflow-hidden border-l border-white/5 shadow-2xl">
           <Header />
           <main className="flex flex-1 flex-col overflow-hidden bg-zinc-950/50">
-            <DownloadList />
-            <DownloadInspector />
+            {currentView === "convert" ? (
+              <ConvertView />
+            ) : (
+              <>
+                <DownloadList />
+                <DownloadInspector />
+              </>
+            )}
           </main>
         </div>
       </div>
