@@ -149,20 +149,34 @@ async fn attempt_download_orchestrator(
     cancel_rx: &mut watch::Receiver<bool>,
     app_handle: &tauri::AppHandle,
 ) -> Result<u64, EngineError> {
+    let is_youtube = url.contains("googlevideo.com") || url.contains("youtube.com");
+
     if let Some(audio) = audio_url {
         // Multi-stream download
         let vid_path = save_path.with_extension("vid");
         let aud_path = save_path.with_extension("aud");
 
-        // We download both streams concurrently to maximize speed
         info!(%download_id, "Downloading video and audio streams concurrently");
         
         let mut cancel_rx_vid = cancel_rx.clone();
         let mut cancel_rx_aud = cancel_rx.clone();
 
         let (vid_size, aud_size) = tokio::try_join!(
-            attempt_download(client, url, &vid_path, download_id, None, 0, &mut cancel_rx_vid, app_handle),
-            attempt_download(client, audio, &aud_path, download_id, None, 0, &mut cancel_rx_aud, app_handle)
+            async {
+                if is_youtube {
+                    attempt_download_chunked(client, url, &vid_path, download_id, total_size, cancel_rx_vid, app_handle).await
+                } else {
+                    attempt_download(client, url, &vid_path, download_id, None, 0, &mut cancel_rx_vid, app_handle).await
+                }
+            },
+            async {
+                if is_youtube {
+                    // Audio stream size is unknown here, attempt_download_chunked will probe it
+                    attempt_download_chunked(client, audio, &aud_path, download_id, None, cancel_rx_aud, app_handle).await
+                } else {
+                    attempt_download(client, audio, &aud_path, download_id, None, 0, &mut cancel_rx_aud, app_handle).await
+                }
+            }
         )?;
 
         // Merge using ffmpeg
@@ -187,7 +201,11 @@ async fn attempt_download_orchestrator(
         Ok(vid_size + aud_size)
     } else {
         // Single stream download
-        attempt_download(client, url, save_path, download_id, total_size, downloaded_so_far, cancel_rx, app_handle).await
+        if is_youtube {
+            attempt_download_chunked(client, url, save_path, download_id, total_size, cancel_rx.clone(), app_handle).await
+        } else {
+            attempt_download(client, url, save_path, download_id, total_size, downloaded_so_far, cancel_rx, app_handle).await
+        }
     }
 }
 
@@ -258,6 +276,167 @@ async fn attempt_download(
     writer.flush().await?;
     emit_progress(app_handle, &download_id_str, &mut tracker);
     Ok(tracker.downloaded())
+}
+
+async fn attempt_download_chunked(
+    client: &reqwest::Client,
+    url: &str,
+    save_path: &Path,
+    download_id: &DownloadId,
+    total_size: Option<u64>,
+    mut cancel_rx: watch::Receiver<bool>,
+    app_handle: &tauri::AppHandle,
+) -> Result<u64, EngineError> {
+    let size = match total_size {
+        Some(s) => s,
+        None => {
+            let caps = probe_capabilities(url).await?;
+            caps.content_length.ok_or_else(|| EngineError::System("Cannot chunk download without total size".to_string()))?
+        }
+    };
+
+    const CHUNKS: u64 = 8;
+    let chunk_size = size / CHUNKS;
+    
+    use std::sync::{Arc, Mutex};
+    let mut total_downloaded_so_far = 0;
+    
+    struct PartInfo {
+        start: u64,
+        end: u64,
+        path: std::path::PathBuf,
+        downloaded: u64,
+    }
+    
+    let mut parts = Vec::new();
+    for i in 0..CHUNKS {
+        let start = i * chunk_size;
+        let end = if i == CHUNKS - 1 { size - 1 } else { (i + 1) * chunk_size - 1 };
+        let part_path = save_path.with_extension(format!("part{}", i));
+        let downloaded = crate::utils::fs::file_size(&part_path);
+        total_downloaded_so_far += downloaded;
+        parts.push(PartInfo { start, end, path: part_path, downloaded });
+    }
+    
+    let tracker = Arc::new(Mutex::new(ProgressTracker::with_initial(Some(size), total_downloaded_so_far)));
+    let mut join_handles = Vec::new();
+    
+    info!(%download_id, size, chunks = CHUNKS, "Starting multi-connection chunked download");
+
+    for part in parts {
+        let client_c = client.clone();
+        let url_c = url.to_string();
+        let download_id_c = download_id.clone();
+        let app_handle_c = app_handle.clone();
+        let mut cancel_rx_c = cancel_rx.clone();
+        let tracker_c = tracker.clone();
+        
+        let handle = tokio::spawn(async move {
+            let current_start = part.start + part.downloaded;
+            if current_start > part.end {
+                return Ok::<(), EngineError>(());
+            }
+            
+            let req = client_c.get(&url_c).header(header::RANGE, format!("bytes={}-{}", current_start, part.end));
+            let resp = req.send().await.map_err(|e| EngineError::Network(e.to_string()))?;
+            let status = resp.status();
+            
+            if status.is_client_error() || status.is_server_error() {
+                return Err(EngineError::ServerError {
+                    status_code: status.as_u16(),
+                    message: format!("Server returned {status}"),
+                });
+            }
+            
+            let file = if part.downloaded > 0 && (status == 206 || status == 200) {
+                if status == 206 {
+                    tokio::fs::OpenOptions::new().create(true).append(true).open(&part.path).await.map_err(|e| EngineError::System(e.to_string()))?
+                } else {
+                    tokio::fs::File::create(&part.path).await.map_err(|e| EngineError::System(e.to_string()))?
+                }
+            } else {
+                tokio::fs::File::create(&part.path).await.map_err(|e| EngineError::System(e.to_string()))?
+            };
+            
+            let mut writer = tokio::io::BufWriter::with_capacity(BUF_CAPACITY, file);
+            let mut stream = resp.bytes_stream();
+            
+            let limiter = app_handle_c.state::<AppState>().bandwidth_limiter.clone();
+            let mut last_emit = Instant::now();
+            let download_id_str = download_id_c.to_string();
+            
+            while let Some(chunk_result) = stream.next().await {
+                if *cancel_rx_c.borrow() {
+                    writer.flush().await.map_err(|e| EngineError::System(e.to_string()))?;
+                    return Err(EngineError::Cancelled);
+                }
+                
+                let chunk = chunk_result.map_err(|e| EngineError::Network(e.to_string()))?;
+                limiter.acquire(chunk.len()).await;
+                writer.write_all(&chunk).await.map_err(|e| EngineError::System(e.to_string()))?;
+                
+                let mut tr = tracker_c.lock().unwrap();
+                tr.update(chunk.len() as u64);
+                if last_emit.elapsed() >= PROGRESS_INTERVAL {
+                    emit_progress_chunked(&app_handle_c, &download_id_str, &mut tr, CHUNKS);
+                    last_emit = Instant::now();
+                }
+            }
+            
+            writer.flush().await.map_err(|e| EngineError::System(e.to_string()))?;
+            Ok(())
+        });
+        
+        join_handles.push(handle);
+    }
+    
+    for handle in join_handles {
+        match handle.await {
+            Ok(Ok(_)) => {},
+            Ok(Err(e)) => return Err(e),
+            Err(e) => return Err(EngineError::System(format!("Task panic: {}", e))),
+        }
+    }
+    
+    // Concatenate files
+    info!(%download_id, "Merging {} chunks into final file", CHUNKS);
+    let mut final_file = tokio::fs::File::create(save_path).await.map_err(|e| EngineError::System(e.to_string()))?;
+    for i in 0..CHUNKS {
+        let part_path = save_path.with_extension(format!("part{}", i));
+        let mut part_file = tokio::fs::File::open(&part_path).await.map_err(|e| EngineError::System(e.to_string()))?;
+        tokio::io::copy(&mut part_file, &mut final_file).await.map_err(|e| EngineError::System(e.to_string()))?;
+        let _ = tokio::fs::remove_file(part_path).await;
+    }
+    
+    let mut tr = tracker.lock().unwrap();
+    emit_progress_chunked(app_handle, &download_id.to_string(), &mut tr, CHUNKS);
+    
+    Ok(size)
+}
+
+fn emit_progress_chunked(app_handle: &tauri::AppHandle, download_id: &str, tracker: &mut ProgressTracker, connections: u64) {
+    let (speed, percentage, eta) = tracker.get_progress();
+    let downloaded_bytes = tracker.downloaded();
+
+    let payload = serde_json::json!({
+        "id": download_id,
+        "status": "downloading",
+        "downloaded_bytes": downloaded_bytes,
+        "total_bytes": tracker.total(),
+        "speed_bytes_per_sec": speed,
+        "percentage": percentage,
+        "eta_seconds": eta,
+        "connections": connections
+    });
+
+    if let Err(e) = app_handle.emit("download-progress", &payload) {
+        error!(error = %e, "Failed to emit progress event");
+    }
+
+    let app_state = app_handle.state::<AppState>();
+    if let Ok(db) = app_state.db.lock() {
+        let _ = repository::update_download_progress(&db, download_id, downloaded_bytes, true);
+    };
 }
 
 fn emit_progress(app_handle: &tauri::AppHandle, download_id: &str, tracker: &mut ProgressTracker) {
